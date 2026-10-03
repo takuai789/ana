@@ -65,6 +65,19 @@
   .forecast .v { font-size: 26px; font-weight: 700; margin: 2px 0 6px; color: var(--navy); }
   .forecast .d { font-size: 13px; line-height: 1.7; color: #38465e; white-space: pre-wrap; }
 
+  .forecast .howto { white-space: normal; margin: 8px 0 4px; padding-left: 1.2em; }
+  .forecast .howto li { margin: 4px 0; padding-left: 2px; }
+  .forecast .howto li::marker { color: var(--mohican); }
+  .ls-link { display: flex; align-items: center; gap: 12px; background: var(--card); border-radius: 16px; padding: 13px 14px; margin-bottom: 12px; text-decoration: none; color: var(--ink); }
+  .ls-link:active { background: #f6f6f8; }
+  .ls-link .ls-ic { width: 34px; height: 34px; border-radius: 10px; background: var(--mohican-soft); color: var(--navy); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .ls-link .ls-tx { flex: 1; min-width: 0; }
+  .ls-link .ls-tx b { display: block; font-size: 14.5px; font-weight: 600; }
+  .ls-link .ls-tx small { display: block; font-size: 11.5px; color: var(--secondary); margin-top: 1px; }
+  .ls-link .ls-go { color: var(--navy); display: flex; }
+  .ls-link.compact { padding: 11px 12px; margin: 10px 0 0; }
+  .ls-link.compact .ls-ic { width: 28px; height: 28px; border-radius: 8px; }
+  .ls-link.compact .ls-tx b { font-size: 13.5px; color: var(--navy); }
   .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px; }
   .stat { background: var(--card); border-radius: 14px; padding: 13px 14px; }
   .stat .k { font-size: 11.5px; color: var(--secondary); font-weight: 500; }
@@ -207,7 +220,14 @@
   const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
   const now = () => Date.now();
 
-  const APP_VERSION = '2.4.0';
+  const APP_VERSION = '2.6.0';
+  // 毎月見るANAの実績確認ページ（LSサービス ご利用実績確認）
+  const ANA_LS_URL = 'https://www.ana.co.jp/ja/jp/amc/premium/overview/status-life/cycle/';
+  const EXT_ICON = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 4h6v6"/><path d="M20 4 11 13"/><path d="M19 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1h5"/></svg>';
+  const lsLinkHTML = (compact) => `<a class="ls-link${compact ? ' compact' : ''}" href="${ANA_LS_URL}" target="_blank" rel="noopener noreferrer">
+      <span class="ls-ic"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 15.5 21 8.5l-2-2-6.5 2.4L6 5 4.5 6l4.3 4.6-4 1.5L3 11l-1 .8 1.6 2.4z"/><path d="M3 20h18"/></svg></span>
+      <span class="ls-tx"><b>LSサービスの利用実績を確認</b>${compact ? '' : '<small>ANA公式・毎月の記録前にチェック</small>'}</span>
+      <span class="ls-go">${EXT_ICON}</span></a>`;
 
   // ---------- IndexedDB ----------
   const DB_NAME = 'ana300-db';
@@ -479,18 +499,40 @@
     $('#homeLead').textContent = f.beforeStart ? `${f.start.getMonth() + 1}/${f.start.getDate()}開始` : (f.remainMonths > 0 ? `${f.goalName}まで${Math.round(f.remainMonths)}か月` : '');
     const rem = reminder();
 
-    let fcValue, fcDesc;
+    // 届く見込みなら「いつ届くか」、届かないなら「あとどうすれば届くか」を出す（翌シーズン以降の到達日は出さない）
+    let fcLabel = '300万円に届くのは', fcValue, fcDesc;
+    const endMd = mdLabel(state.settings.period_end);
     if (f.status.key === 'done') { fcValue = '達成済み'; fcDesc = `${mdLabel(f.latest.date)}時点で ${man(f.cur)}円。おつかれさまでした。`; }
-    else if (!f.reachDate) { fcValue = '—'; fcDesc = 'ペースが出せません。予定を入れるか、設定の想定月平均を入れてください。'; }
-    else {
+    else if (f.reachDate && f.reachDate <= f.goal) {
       fcValue = `${ymLabel(f.reachDate)}ごろ`;
       const mo = Math.max(1, Math.ceil(f.monthsToReach));
       const paceTxt = f.fixedMonthly > 0
         ? `予定分（月${man(f.fixedMonthly)}円）＋予定外（月${man(f.varPace)}円${f.paceSrc === 'assumed' ? '・想定' : ''}）のペースで、${f.beforeStart ? '期間開始から' : 'あと'}約${mo}か月で300万円に届く見込みです。`
         : `このペース（月${man(f.pace)}円${f.paceSrc === 'assumed' ? '・想定値' : ''}）なら、${f.beforeStart ? '期間開始から' : 'あと'}約${mo}か月で300万円に届く見込みです。`;
-      if (f.reachDate <= f.goal) fcDesc = paceTxt + `\n目標の${f.goalName}より約${Math.round((f.goal - f.reachDate) / DAY)}日早く、余裕をもって達成できます。`;
-      else if (f.reachDate <= f.end) fcDesc = paceTxt + `\n判定期間内には届きますが、${f.goalName}時点では約${man(f.target - f.landing)}円足りない見込み。期限ギリギリです。`;
-      else fcDesc = paceTxt + `\n${f.goalName}時点では約${man(f.target - f.landing)}円、判定期間末でも約${man(f.target - f.landingEnd)}円足りない見込みです。`;
+      fcDesc = paceTxt + `\n目標の${f.goalName}より約${Math.round((f.goal - f.reachDate) / DAY)}日早く、余裕をもって達成できます。`;
+    } else {
+      const useGoal = f.remainMonths > 0;
+      const months = useGoal ? f.remainMonths : f.remainToEnd;
+      const landingAt = useGoal ? f.landing : f.landingEnd;
+      const when = useGoal ? f.goalName : `判定期間末（${endMd}）`;
+      const short = Math.max(0, f.target - landingAt);
+      if (months <= 0) {
+        fcLabel = '今シーズンの結果'; fcValue = '届きませんでした';
+        fcDesc = `最終累計は${man(f.cur)}円（あと${man(f.remain)}円でした）。\n次のシートで、予定や寄せ方を見直して仕切り直しましょう。`;
+      } else {
+        const extra = short / months;
+        const mo = Math.max(1, Math.round(months));
+        fcLabel = `${when}に間に合わせるには`;
+        fcValue = `毎月あと +${man(extra)}円`;
+        const how = f.fixedMonthly > 0
+          ? `予定外の支出を月${man(f.varPace)}円 → 月${man(f.varPace + extra)}円に増やす`
+          : `月${man(f.pace)}円 → 月${man(f.pace + extra)}円のペースにする`;
+        fcDesc = `今のペースだと${when}時点で約${man(short)}円足りません。次のどれかで届きます。` +
+          `<ul class="howto"><li>残り約${mo}か月、${how}</li>` +
+          `<li>税金・家電・旅行などの支払い約${man(short)}円を、まとめてANAカード／ANA Payに寄せる</li>` +
+          `<li>毎月払っているのに予定に入っていない支払いがあれば、ANAに切り替えて予定に追加する</li></ul>` +
+          (useGoal && f.reachDate && f.reachDate <= f.end ? `（このままでも判定期間末の${endMd}までには届く見込みです）` : '');
+      }
     }
 
     let msgCls = 'calm', msg = '';
@@ -541,8 +583,10 @@
         <div class="hero-row"><span>達成率 ${Math.floor(pct)}%${f.fixedMonthly > 0 ? `　予定込み ${Math.floor(securedPct)}%` : ''}</span><span>${f.lastDiff != null ? `前回比 ${signMan(f.lastDiff)}円` : ''}</span></div>
       </div>
 
+      ${lsLinkHTML(false)}
+
       <div class="forecast">
-        <div style="display:flex; justify-content:space-between; align-items:center; gap:8px;"><div class="k">300万円に届くのは</div><span class="pill ${f.status.cls}">${f.status.label}</span></div>
+        <div style="display:flex; justify-content:space-between; align-items:center; gap:8px;"><div class="k">${fcLabel}</div><span class="pill ${f.status.cls}">${f.status.label}</span></div>
         <div class="v">${fcValue}</div>
         <div class="d">${fcDesc}</div>
       </div>
@@ -560,7 +604,7 @@
         <div class="stat"><div class="k">${f.goalName}時点の過不足</div><div class="v" style="color:${f.landing >= f.target ? 'var(--green)' : '#B26A00'}">${signMan(f.landing - f.target)}<small>円</small></div></div>
       </div>
 
-      <div class="msg ${msgCls}">${msg}</div>
+      ${msg && msgCls !== 'warn' ? `<div class="msg ${msgCls}">${msg}</div>` : ''}
 
       <div class="sec-label">推移</div>
       <div class="chart">${chartSVG(f)}
@@ -666,6 +710,7 @@
       <div class="field"><label>判定期間の累計利用額</label>
         <div class="inwrap"><input type="number" class="big" inputmode="decimal" step="0.1" id="sc" value="${s.cumulative != null ? yenToMan(s.cumulative) : ''}" placeholder="0"><span class="unit">万円</span></div>
         <div class="prev-note" id="scNote">${before ? `前回（${mdLabel(before.date)}）は ${man(before.cumulative)}円` : 'ANAの利用実績照会に出ている累計をそのまま入力'}</div>
+        ${lsLinkHTML(true)}
       </div>
       <div class="field"><label>メモ（任意）</label><input type="text" id="sn" value="${esc(s.note || '')}" placeholder="旅行・家電・税金など"></div>
       ${id ? `<button class="del-btn" id="snapDel">この記録を削除</button>` : ''}
