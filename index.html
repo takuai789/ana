@@ -144,6 +144,17 @@
   .tab { flex: 1; border: 0; background: none; padding: 7px 0 5px; display: flex; flex-direction: column; align-items: center; gap: 3px; color: var(--tertiary); cursor: pointer; font-family: inherit; }
   .tab.active { color: var(--navy); }
   .tab span { font-size: 10px; font-weight: 600; }
+  .tab { position: relative; }
+  .tab.has-dot::after { content: ''; position: absolute; top: 6px; left: calc(50% + 9px); width: 9px; height: 9px; border-radius: 50%; background: var(--amber); border: 2px solid #F8F8FA; }
+  .overdue { background: var(--amber-soft); border-radius: 16px; padding: 14px 15px; margin-bottom: 12px; }
+  .overdue .ttl { display: flex; align-items: center; gap: 8px; font-size: 15px; font-weight: 700; color: #8a5300; }
+  .overdue .sub { font-size: 12.5px; color: #6b5532; line-height: 1.6; margin: 4px 0 12px; }
+  .overdue .acts { display: flex; gap: 8px; }
+  .overdue .acts button, .overdue .acts a { flex: 1; border: 0; border-radius: 11px; padding: 11px 8px; font-family: inherit; font-size: 13.5px; font-weight: 700; cursor: pointer; text-align: center; text-decoration: none; }
+  .overdue .acts .go { background: var(--navy); color: #fff; }
+  .overdue .acts .lk { background: #fff; color: var(--navy); }
+  .row.missing .ttl { color: #8a5300; }
+  .row.missing .amt { color: #B26A00; font-size: 13px; }
   .tab svg { width: 25px; height: 25px; }
 
   .sheet-bg { position: fixed; inset: 0; background: rgba(0,0,0,.35); opacity: 0; pointer-events: none; transition: opacity .25s; z-index: 200; }
@@ -154,6 +165,8 @@
   .sheet-head .t { font-size: 17px; font-weight: 700; }
   .sheet-head button { background: none; border: 0; font-family: inherit; font-size: 15px; font-weight: 600; color: var(--navy); cursor: pointer; }
   .sheet-body { overflow-y: auto; padding: 4px 16px 20px; }
+  select.sel { width: 100%; font-family: inherit; font-size: 16px; color: var(--ink); background: var(--card); border: 0; border-radius: 12px; padding: 13px 14px; outline: none; -webkit-appearance: none; appearance: none; min-height: 48px;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5 6 6.5 11 1.5' fill='none' stroke='%23999' stroke-width='1.8' stroke-linecap='round'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 14px center; }
   .del-btn { width: 100%; border: 0; background: none; color: #B26A00; font-family: inherit; font-size: 14px; font-weight: 600; padding: 12px; cursor: pointer; }
 
   .field { margin-bottom: 14px; }
@@ -220,7 +233,7 @@
   const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
   const now = () => Date.now();
 
-  const APP_VERSION = '2.6.0';
+  const APP_VERSION = '2.8.0';
   // 毎月見るANAの実績確認ページ（LSサービス ご利用実績確認）
   const ANA_LS_URL = 'https://www.ana.co.jp/ja/jp/amc/premium/overview/status-life/cycle/';
   const EXT_ICON = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 4h6v6"/><path d="M20 4 11 13"/><path d="M19 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1h5"/></svg>';
@@ -231,8 +244,8 @@
 
   // ---------- IndexedDB ----------
   const DB_NAME = 'ana300-db';
-  const DB_VERSION = 6;   // v2.2: sheets（年ごと）/ fixed（予定） v2.3: tasks（やること）
-  const STORES = ['settings', 'sheets', 'snapshots', 'fixed', 'tasks'];
+  const DB_VERSION = 7;   // v2.2: sheets / fixed  v2.3: tasks  v2.8: oneoffs（単発の予定）
+  const STORES = ['settings', 'sheets', 'snapshots', 'fixed', 'tasks', 'oneoffs'];
   let _db = null;
   function openDB() {
     return new Promise((resolve, reject) => {
@@ -281,7 +294,7 @@
     return { id: uid(), period_start: toISO(st), period_end: toISO(en), goal_deadline: toISO(goal), target_amount: prev.target_amount, assumed_monthly: prev.assumed_monthly, updatedAt: now() };
   }
 
-  const state = { prefs: { id: 'prefs' }, sheets: [], activeList: [], archived: [], settings: null, allSnaps: [], allFixed: [], allTasks: [], snaps: [], fixed: [], tasks: [] };
+  const state = { prefs: { id: 'prefs' }, sheets: [], activeList: [], archived: [], settings: null, allSnaps: [], allFixed: [], allTasks: [], allOneoffs: [], snaps: [], fixed: [], tasks: [], oneoffs: [] };
 
   async function loadAll() {
     const settingsRows = await getAll('settings');
@@ -300,12 +313,18 @@
     let active = sheets.filter(s => s.period_end >= t);
     const fixed = await getAll('fixed');
     for (const f of fixed) if (!f.sheetId) { f.sheetId = (active[0] || sheets[sheets.length - 1]).id; await put('fixed', f); }
+    const oneoffs = await getAll('oneoffs');
     while (active.length < 3) {
       const prev = sheets[sheets.length - 1];
       const ns = nextSheetFrom(prev); await put('sheets', ns); sheets.push(ns); if (ns.period_end >= t) active.push(ns);
       // 「毎年」の印が付いた予定は、新しいシートにも自動で引き継ぐ
       for (const f of fixed.filter(x => x.sheetId === prev.id && x.recurring)) {
         const nf = { ...f, id: uid(), sheetId: ns.id, updatedAt: now() }; await put('fixed', nf); fixed.push(nf);
+      }
+      // 「毎年」の単発予定（固定資産税など）も同じ月で引き継ぐ
+      for (const o of oneoffs.filter(x => x.sheetId === prev.id && x.recurring)) {
+        const m = sameMonthIn(ns, o.month); if (!m) continue;
+        const no = { ...o, id: uid(), sheetId: ns.id, month: m, updatedAt: now() }; await put('oneoffs', no); oneoffs.push(no);
       }
     }
     state.sheets = sheets;
@@ -315,12 +334,13 @@
     // 旧データ（sheetIdなし）を該当シートへ移す
     const snaps = await getAll('snapshots');
     for (const s of snaps) if (!s.sheetId) { const sh = sheets.find(x => s.date >= x.period_start && s.date <= x.period_end) || active[0]; s.sheetId = sh.id; await put('snapshots', s); }
-    state.allSnaps = snaps; state.allFixed = fixed;
+    state.allSnaps = snaps; state.allFixed = fixed; state.allOneoffs = oneoffs;
 
     const aid = active.some(s => s.id === state.prefs.active_sheet) ? state.prefs.active_sheet : active[0].id;
     state.settings = sheets.find(s => s.id === aid);
     state.snaps = snaps.filter(s => s.sheetId === aid).sort((a, b) => a.date < b.date ? -1 : a.date > b.date ? 1 : 0);
     state.fixed = fixed.filter(f => f.sheetId === aid).sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+    state.oneoffs = oneoffs.filter(o => o.sheetId === aid).sort((a, b) => a.month < b.month ? -1 : a.month > b.month ? 1 : 0);
     const tasks = await getAll('tasks');
     for (const t of tasks) if (!t.sheetId) { t.sheetId = active[0].id; await put('tasks', t); }
     state.allTasks = tasks;
@@ -356,6 +376,16 @@
     return out;
   }
   const fixedMonthlyTotal = (list = state.fixed) => list.reduce((a, x) => a + (x.monthly || 0), 0);
+  // 単発の予定を置ける月：判定期間開始の月 〜 目標期限の月
+  function oneoffMonths(s = state.settings) {
+    const start = fromISO(s.period_start), goal = goalOf(s);
+    let y = start.getFullYear(), m = start.getMonth(); const out = [];
+    while (y < goal.getFullYear() || (y === goal.getFullYear() && m <= goal.getMonth())) { out.push(`${y}-${pad(m + 1)}`); m++; if (m > 11) { m = 0; y++; } }
+    return out;
+  }
+  // 別のシートで「同じ月（◯月）」にあたる年月
+  function sameMonthIn(sh, ym) { const mm = ym.slice(5); return oneoffMonths(sh).find(x => x.slice(5) === mm) || null; }
+  const ymFull = (ym) => `${ym.slice(0, 4)}年${Number(ym.slice(5))}月`;
 
   // 記録日の初期値：その月の末日（月初10日までは先月末）。シートの期間内に収める
   function defaultSnapDate() {
@@ -375,25 +405,35 @@
     const start = fromISO(s.period_start), end = fromISO(s.period_end), goal = goalOf(s);
     const today = new Date(); today.setHours(0, 0, 0, 0);
     const latest = state.snaps[state.snaps.length - 1] || null;
-    const cur = latest ? latest.cumulative : 0;
+    const official = latest ? latest.cumulative : 0;      // ANAの実績に載っている累計
+    const pending = latest ? (latest.pending || 0) : 0;   // 払ったけど未反映の分
+    const cur = official + pending;                       // 試算は反映待ち込みで見る
     const asOf = latest ? fromISO(latest.date) : (today < start ? start : today > end ? end : today);
     const elapsed = Math.max(0, monthsBetween(start, asOf));
     const remainMonths = Math.max(0, monthsBetween(asOf, goal));
     const remainToEnd = Math.max(0, monthsBetween(asOf, end));
     const remain = Math.max(0, target - cur);
 
+    // 単発の予定：記録済みの月は累計に含まれる。まだの月だけ足す（目標期限の月まで）
+    const lastYM = latest ? latest.date.slice(0, 7) : toISO(start).slice(0, 7);
+    const goalYM = toISO(goal).slice(0, 7);
+    const oneLeft = state.oneoffs.filter(o => o.month > lastYM && o.month <= goalYM);
+    const onePast = latest ? state.oneoffs.filter(o => o.month <= lastYM).reduce((a, o) => a + (o.amount || 0), 0) : 0;
+    const oneoffRemaining = oneLeft.reduce((a, o) => a + (o.amount || 0), 0);
+
     let pace, paceSrc;
     if (latest && elapsed >= 1) { pace = cur / elapsed; paceSrc = 'actual'; }
     else { pace = s.assumed_monthly; paceSrc = 'assumed'; }
+    // 過去の単発分を除いた「ふだんの」ペース（単発で跳ねた月にひきずられない）
+    const basePace = paceSrc === 'actual' ? Math.max(0, (cur - onePast) / elapsed) : pace;
 
     // 予定分：最新記録の月より後の計上月だけ足す（記録済みの月は累計に含まれる）
     const plan = planMonths(s);
     const fixedMonthly = fixedMonthlyTotal();
-    const lastYM = latest ? latest.date.slice(0, 7) : toISO(start).slice(0, 7);
     const planLeft = plan.filter(ym => ym > lastYM);
     const fixedRemaining = fixedMonthly * planLeft.length;
-    const secured = cur + fixedRemaining;
-    const varPace = fixedMonthly > 0 ? Math.max(0, pace - fixedMonthly) : pace;
+    const secured = cur + fixedRemaining + oneoffRemaining;
+    const varPace = Math.max(0, basePace - fixedMonthly);
 
     const needMonthly = remainMonths > 0 ? remain / remainMonths : remain;
     const needVar = Math.max(0, target - secured);
@@ -407,13 +447,17 @@
     else {
       let t = asOf.getTime(), amt = cur;
       const perDay = varPace / MONTH_DAYS;
-      const events = planLeft.map(ym => monthEndOf(ym).getTime()).filter(e => e >= t);
+      // 月末ごとに 予定分＋その月の単発 を加算
+      const add = new Map();
+      for (const ym of planLeft) add.set(ym, (add.get(ym) || 0) + fixedMonthly);
+      for (const o of oneLeft) add.set(o.month, (add.get(o.month) || 0) + (o.amount || 0));
+      const events = [...add.keys()].sort().map(ym => [monthEndOf(ym).getTime(), add.get(ym)]).filter(([e]) => e >= t);
       const limit = asOf.getTime() + 60 * MONTH_DAYS * DAY;
-      for (const e of [...events, limit]) {
+      for (const [e, plus] of [...events, [limit, 0]]) {
         const days = (e - t) / DAY;
         if (perDay > 0 && amt + perDay * days >= target) { reachDate = new Date(t + ((target - amt) / perDay) * DAY); break; }
         amt += perDay * days; t = e;
-        if (e !== limit) { amt += fixedMonthly; if (amt >= target) { reachDate = new Date(e); break; } }
+        if (plus) { amt += plus; if (amt >= target) { reachDate = new Date(e); break; } }
       }
       if (reachDate) monthsToReach = monthsBetween(asOf, reachDate);
     }
@@ -423,28 +467,61 @@
 
     const goalName = `${goal.getMonth() + 1}月末`;
     let status;
-    if (cur >= target) status = { key: 'done', label: '達成', cls: 'green' };
+    if (official >= target) status = { key: 'done', label: '達成', cls: 'green' };
+    else if (cur >= target) status = { key: 'pendingDone', label: '反映待ち込みで到達', cls: 'green' };
     else if (reachDate && reachDate <= goal) status = { key: 'ontrack', label: `${goalName}までに届く見込み`, cls: 'green' };
     else if (reachDate && reachDate <= end) status = { key: 'late', label: `${goalName}は過ぎる見込み`, cls: 'amber' };
     else if (landingEnd >= target * 0.9) status = { key: 'close', label: 'あと少し', cls: 'amber' };
     else status = { key: 'behind', label: '届かない見込み', cls: 'gray' };
 
     const beforeStart = !latest && today < start;
-    return { target, start, end, goal, goalName, cur, asOf, elapsed, remainMonths, remainToEnd, remain, pace, paceSrc, varPace, needMonthly, needVar, needVarMonthly, landing, landingEnd, reachDate, monthsToReach, lastDiff, status, latest, beforeStart, plan, planLeft, fixedMonthly, fixedRemaining, secured };
+    return { target, start, end, goal, goalName, cur, asOf, elapsed, remainMonths, remainToEnd, remain, pace, paceSrc, varPace, needMonthly, needVar, needVarMonthly, landing, landingEnd, reachDate, monthsToReach, lastDiff, status, latest, beforeStart, plan, planLeft, fixedMonthly, fixedRemaining, secured, official, pending, oneLeft, oneoffRemaining };
   }
 
   // ---------- リマインド（今年分のみ） ----------
-  function reminder() {
-    if (!isCurrentSheet()) return '';
-    const s = state.settings, t = new Date(), ti = todayISO();
-    if (ti < s.period_start) return '';
+  // 月末を過ぎたのに記録がない月。累計で記録するので、最後の記録より後の月だけを見る
+  // （最新の累計さえ入れば、それより前の抜けは問題にならない）
+  function missingMonths() {
+    if (!isCurrentSheet()) return [];
+    const s = state.settings, today = new Date(); today.setHours(0, 0, 0, 0);
+    if (todayISO() < s.period_start) return [];
+    const st = fromISO(s.period_start), out = [];
     const latest = state.snaps[state.snaps.length - 1];
-    const prevMonthEnd = new Date(t.getFullYear(), t.getMonth(), 0);
-    const curYM = ti.slice(0, 7), prevYM = toISO(prevMonthEnd).slice(0, 7);
-    const lastYM = latest ? latest.date.slice(0, 7) : null;
-    if (t.getDate() >= 25 && lastYM !== curYM) return `${t.getMonth() + 1}月末の記録の時期です。利用実績照会の累計を入れましょう`;
-    if (t.getDate() <= 10 && toISO(prevMonthEnd) >= s.period_start && (!lastYM || lastYM < prevYM)) return `${prevMonthEnd.getMonth() + 1}月末の記録がまだです`;
-    return '';
+    const lastYM = latest ? latest.date.slice(0, 7) : '';
+    let d = new Date(st.getFullYear(), st.getMonth() + 1, 0);
+    while (d < today && toISO(d) <= s.period_end) {
+      const ym = toISO(d).slice(0, 7);
+      if (ym > lastYM) out.push(ym);
+      d = new Date(d.getFullYear(), d.getMonth() + 2, 0);
+    }
+    return out;
+  }
+  const monthEndISO = (ym) => toISO(monthEndOf(ym));
+  const daysSince = (iso) => Math.max(1, Math.round((new Date().setHours(0, 0, 0, 0) - fromISO(iso)) / DAY));
+  function reminder() {
+    if (!isCurrentSheet()) return null;
+    const s = state.settings, t = new Date(), ti = todayISO();
+    if (ti < s.period_start) return null;
+    const miss = missingMonths();
+    if (miss.length) {
+      const ym = miss[miss.length - 1];
+      return { kind: 'overdue', ym, date: monthEndISO(ym), count: miss.length,
+        title: `${ymShort(ym)}末の記録がまだです`,
+        sub: miss.length > 1
+          ? `${ymShort(miss[0])}末から記録が止まっています（${miss.length}か月分）。最新の累計を1つ入れれば、間の月は入れなくて大丈夫です`
+          : `月末から${daysSince(monthEndISO(ym))}日たちました。実績を確認して累計を入れましょう` };
+    }
+    const curYM = ti.slice(0, 7);
+    const latest = state.snaps[state.snaps.length - 1];
+    if (t.getDate() >= 25 && (!latest || latest.date.slice(0, 7) !== curYM) && monthEndISO(curYM) <= s.period_end)
+      return { kind: 'soon', ym: curYM, date: monthEndISO(curYM), title: `${t.getMonth() + 1}月末の記録の時期です`, sub: '利用実績照会の累計を入れましょう' };
+    return null;
+  }
+  // 記録タブの印とホーム画面アイコンのバッジ（対応端末のみ）
+  function updateBadges() {
+    const n = missingMonths().length;
+    const tab = document.querySelector('.tab[data-v=log]'); if (tab) tab.classList.toggle('has-dot', n > 0);
+    try { if (navigator.setAppBadge) { n ? navigator.setAppBadge(n) : navigator.clearAppBadge(); } } catch (e) {}
   }
 
   // ---------- グラフ ----------
@@ -502,7 +579,8 @@
     // 届く見込みなら「いつ届くか」、届かないなら「あとどうすれば届くか」を出す（翌シーズン以降の到達日は出さない）
     let fcLabel = '300万円に届くのは', fcValue, fcDesc;
     const endMd = mdLabel(state.settings.period_end);
-    if (f.status.key === 'done') { fcValue = '達成済み'; fcDesc = `${mdLabel(f.latest.date)}時点で ${man(f.cur)}円。おつかれさまでした。`; }
+    if (f.status.key === 'done') { fcValue = '達成済み'; fcDesc = `${mdLabel(f.latest.date)}時点で ${man(f.official)}円。おつかれさまでした。`; }
+    else if (f.status.key === 'pendingDone') { fcValue = '反映待ちを含めて到達'; fcDesc = `実績 ${man(f.official)}円＋反映待ち ${man(f.pending)}円で300万円に届いています。\nANAの実績に反映されるまで、毎月の記録で確認を続けましょう。`; }
     else if (f.reachDate && f.reachDate <= f.goal) {
       fcValue = `${ymLabel(f.reachDate)}ごろ`;
       const mo = Math.max(1, Math.ceil(f.monthsToReach));
@@ -536,7 +614,7 @@
     }
 
     let msgCls = 'calm', msg = '';
-    if (f.status.key === 'done') { msgCls = 'good'; msg = '目標に届きました。ここから先は無理に寄せる必要はありません。'; }
+    if (f.status.key === 'done' || f.status.key === 'pendingDone') { msgCls = 'good'; msg = '目標に届きました。ここから先は無理に寄せる必要はありません。'; }
     else if (f.remainMonths <= 0) {
       msg = f.remainToEnd > 0 ? `${f.goalName}の目標期限を過ぎました。判定期間末（${mdLabel(state.settings.period_end)}）まではあと${man(f.remain)}円です。` : '判定期間が終わりました。まもなくアーカイブに移ります。';
     } else if (f.fixedMonthly > 0) {
@@ -554,12 +632,13 @@
 
     const pl = f.plan;
     const planRange = pl.length ? `${ymShort(pl[0])}〜${ymShort(pl[pl.length - 1])}の${pl.length}か月` : '';
-    const planCard = f.fixedMonthly > 0 ? `
+    const planCard = f.fixedMonthly > 0 || f.oneLeft.length ? `
       <div class="sec-label">確実に払う分（予定）</div>
       <div class="card tap" id="goPlan">
         <div class="sumline"><div class="l">月${man(f.fixedMonthly)}円 × 残り${f.planLeft.length}か月</div><div class="r">+${man(f.fixedRemaining)}円</div></div>
+        ${f.oneLeft.length ? `<div class="sumline" style="margin-top:6px;"><div class="l">単発の予定 ${f.oneLeft.length}件（${f.oneLeft.map(o => ymShort(o.month)).filter((v, i, a) => a.indexOf(v) === i).join('・')}）</div><div class="r">+${man(f.oneoffRemaining)}円</div></div>` : ''}
         <div class="hr"></div>
-        <div class="sumline"><div class="l">${f.goalName}の確定ライン<br><span style="font-size:11px; color:var(--tertiary);">累計＋予定分</span></div><div class="r" style="color:var(--ink); font-size:24px;">${man(f.secured)}<small style="font-size:13px;">円</small></div></div>
+        <div class="sumline"><div class="l">${f.goalName}の確定ライン<br><span style="font-size:11px; color:var(--tertiary);">累計${f.pending ? '・反映待ち' : ''}＋予定分</span></div><div class="r" style="color:var(--ink); font-size:24px;">${man(f.secured)}<small style="font-size:13px;">円</small></div></div>
         <div style="font-size:13px; margin-top:8px; font-weight:600; color:${f.secured >= f.target ? 'var(--green)' : '#B26A00'};">
           ${f.secured >= f.target ? `予定分だけで300万円に届きます（${signMan(f.secured - f.target)}円）` : `300万円まで あと${man(f.needVar)}円を予定外の支出で`}</div>
         <div style="font-size:11px; color:var(--tertiary); margin-top:6px;">計上期間：${planRange}（記録済みの月は累計に含まれるので除外）</div>
@@ -574,16 +653,22 @@
 
     $('#homeScroll').innerHTML = `
       ${sheetBarHTML()}
-      ${rem ? `<div class="msg calm tap" id="remTap"><span style="flex:1;">${esc(rem)}</span><span class="chev">›</span></div>` : ''}
+      ${rem && rem.kind === 'overdue' ? `<div class="overdue">
+          <div class="ttl"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>${esc(rem.title)}</div>
+          <div class="sub">${esc(rem.sub)}</div>
+          <div class="acts"><a class="lk" href="${ANA_LS_URL}" target="_blank" rel="noopener noreferrer">実績を確認</a><button class="go" id="remTap">${ymShort(rem.ym)}末の累計を記録</button></div>
+        </div>` : rem ? `<div class="msg calm tap" id="remTap"><span style="flex:1;">${esc(rem.title)}。${esc(rem.sub)}</span><span class="chev">›</span></div>` : ''}
       <div class="hero">
         <div class="lbl">${sheetName(state.settings)}　${f.latest ? `${mdLabel(f.latest.date)} 時点の累計利用額` : (f.beforeStart ? `${mdLabel(state.settings.period_start)}から開始` : 'まだ記録がありません')}</div>
-        <div class="big">${man(f.cur)}<small>円</small></div>
+        <div class="big">${man(f.official)}<small>円</small></div>
+        ${f.pending ? `<div class="sub" style="margin-bottom:2px;">＋反映待ち ${man(f.pending)}円（込みで ${man(f.cur)}円）</div>` : ''}
         <div class="sub">あと <b>${man(f.remain)}円</b> で${man(f.target)}円</div>
         <div class="gauge">${f.fixedMonthly > 0 ? `<b style="width:${securedPct}%"></b>` : ''}<i style="width:${pct}%"></i></div>
         <div class="hero-row"><span>達成率 ${Math.floor(pct)}%${f.fixedMonthly > 0 ? `　予定込み ${Math.floor(securedPct)}%` : ''}</span><span>${f.lastDiff != null ? `前回比 ${signMan(f.lastDiff)}円` : ''}</span></div>
       </div>
 
       ${lsLinkHTML(false)}
+      ${backupCardHTML()}
 
       <div class="forecast">
         <div style="display:flex; justify-content:space-between; align-items:center; gap:8px;"><div class="k">${fcLabel}</div><span class="pill ${f.status.cls}">${f.status.label}</span></div>
@@ -617,9 +702,12 @@
       </div>
     `;
     bindSheetBar($('#homeScroll'), renderHome);
-    const ra = $('#remTap'); if (ra) ra.onclick = () => openSnapSheet(null);
+    const ra = $('#remTap'); if (ra) ra.onclick = () => openSnapSheet(null, rem.date);
+    updateBadges();
     const fa = $('#firstAdd'); if (fa) fa.onclick = () => openSnapSheet(null);
     const gp = $('#goPlan'); if (gp) gp.onclick = () => switchView('plan');
+    const bk = $('#bkNow'); if (bk) bk.onclick = () => exportData();
+    const bl = $('#bkLater'); if (bl) bl.onclick = async () => { state.prefs = { ...state.prefs, backup_snooze: now() + 7 * DAY }; await put('settings', state.prefs); renderHome(); toast('1週間後にまたお知らせします'); };
     const gt = $('#goTasks'); if (gt) gt.onclick = () => switchView('tasks');
   }
 
@@ -680,30 +768,41 @@
   // ===================== 記録 =====================
   function renderLog() {
     const bar = sheetBarHTML();
-    if (!state.snaps.length) {
+    const miss = missingMonths();
+    if (!state.snaps.length && !miss.length) {
       const before = todayISO() < state.settings.period_start;
       $('#logScroll').innerHTML = `${bar}<div class="empty">${sheetName(state.settings)}の記録はまだありません。<br>${before ? `判定期間は ${mdLabel(state.settings.period_start)} から。始まったら毎月末に<br>` : '毎月末に、'}ANAの利用実績照会の「累計利用額」を1つ入れるだけです。</div>${before ? '' : '<button class="btn primary" id="logFirst">記録する</button>'}`;
       bindSheetBar($('#logScroll'), renderLog);
       const lf = $('#logFirst'); if (lf) lf.onclick = () => openSnapSheet(null);
-      return;
+      updateBadges(); return;
     }
-    const rows = [...state.snaps].reverse().map((s, i, arr) => {
-      const prev = arr[i + 1];
+    // 記録と未記録の月を日付順にまとめて新しい順に表示
+    const items = [...state.snaps.map(s => ({ type: 'snap', date: s.date, s })), ...miss.slice(-1).map(ym => ({ type: 'miss', date: monthEndISO(ym), ym }))]
+      .sort((a, b) => a.date < b.date ? 1 : -1);
+    const snapsDesc = [...state.snaps].reverse();
+    const rows = items.map(it => {
+      if (it.type === 'miss') return `<div class="row missing" data-miss="${it.date}">
+        <div class="main"><div class="ttl">${ymShort(it.ym)}末</div><div class="meta">月末から${daysSince(it.date)}日・タップして記録</div></div>
+        <div class="amt">未記録</div><span class="chev">›</span></div>`;
+      const s = it.s, i = snapsDesc.indexOf(s), prev = snapsDesc[i + 1];
       const diff = prev ? s.cumulative - prev.cumulative : null;
       return `<div class="row" data-id="${s.id}">
-        <div class="main"><div class="ttl">${mdLabel(s.date)}</div><div class="meta">${s.note ? esc(s.note) : (prev ? `前回から${Math.round(monthsBetween(fromISO(prev.date), fromISO(s.date)) * 10) / 10}か月` : '最初の記録')}</div></div>
+        <div class="main"><div class="ttl">${mdLabel(s.date)}</div><div class="meta">${s.pending ? `反映待ち ${man(s.pending)}円${s.note ? '・' : ''}` : ''}${s.note ? esc(s.note) : (s.pending ? '' : (prev ? `前回から${Math.round(monthsBetween(fromISO(prev.date), fromISO(s.date)) * 10) / 10}か月` : '最初の記録'))}</div></div>
         <div class="amt">${man(s.cumulative)}円${diff != null ? `<small style="${diff < 0 ? 'color:#B26A00' : ''}">${signMan(diff)}円</small>` : ''}</div>
         <span class="chev">›</span></div>`;
     }).join('');
     $('#logScroll').innerHTML = `${bar}<div class="sec-label">${sheetName(state.settings)}：月末時点の累計利用額</div><div class="list">${rows}</div>
-      <div style="font-size:11.5px; color:var(--tertiary); margin:0 2px; line-height:1.6;">緑の数字は前回からの増加分（その間に使った額）です。</div>`;
+      <div style="font-size:11.5px; color:var(--tertiary); margin:0 2px; line-height:1.6;">緑の数字は前回からの増加分（その間に使った額）です。${miss.length ? '<br>「未記録」は月末を過ぎてまだ入れていない月です。' : ''}</div>`;
     bindSheetBar($('#logScroll'), renderLog);
-    $$('#logScroll .row').forEach(el => el.onclick = () => openSnapSheet(el.dataset.id));
+    $$('#logScroll .row[data-id]').forEach(el => el.onclick = () => openSnapSheet(el.dataset.id));
+    $$('#logScroll .row[data-miss]').forEach(el => el.onclick = () => openSnapSheet(null, el.dataset.miss));
+    updateBadges();
   }
 
-  function openSnapSheet(id) {
+  function openSnapSheet(id, presetDate) {
     const sh = state.settings;
-    const s = id ? state.snaps.find(x => x.id === id) : { id: uid(), date: defaultSnapDate(), cumulative: null, note: '' };
+    if (!id && !presetDate) { const r = reminder(); if (r && r.kind === 'overdue') presetDate = r.date; }   // 未記録の月があればその月末を初期値に
+    const s = id ? state.snaps.find(x => x.id === id) : { id: uid(), date: presetDate || defaultSnapDate(), cumulative: null, note: '' };
     const before = state.snaps.filter(x => x.id !== s.id && x.date < s.date).pop();
     openSheet(id ? '記録を編集' : `月末の記録（${sheetName(sh)}）`, `
       <div class="field"><label>記録日</label><input type="date" id="sd" value="${s.date}" min="${sh.period_start}" max="${sh.period_end}"></div>
@@ -712,6 +811,9 @@
         <div class="prev-note" id="scNote">${before ? `前回（${mdLabel(before.date)}）は ${man(before.cumulative)}円` : 'ANAの利用実績照会に出ている累計をそのまま入力'}</div>
         ${lsLinkHTML(true)}
       </div>
+      <div class="field"><label>反映待ち（任意）</label>
+        <div class="inwrap"><input type="number" inputmode="decimal" step="0.1" id="sp" value="${s.pending ? yenToMan(s.pending) : ''}" placeholder="0"><span class="unit">万円</span></div>
+        <div class="hint">もう払ったけれど、まだ実績に載っていない分（反映が遅いサービスなど）。試算はこれを含めて計算します。</div></div>
       <div class="field"><label>メモ（任意）</label><input type="text" id="sn" value="${esc(s.note || '')}" placeholder="旅行・家電・税金など"></div>
       ${id ? `<button class="del-btn" id="snapDel">この記録を削除</button>` : ''}
     `, async () => {
@@ -720,7 +822,7 @@
       let date = $('#sd').value || defaultSnapDate();
       if (date < sh.period_start || date > sh.period_end) { toast('このシートの判定期間内の日付にしてください'); return false; }
       const sameMonth = state.snaps.find(x => x.id !== s.id && x.date.slice(0, 7) === date.slice(0, 7));
-      const rec = { id: sameMonth && !id ? sameMonth.id : s.id, sheetId: sh.id, date, cumulative: manToYen(raw), note: $('#sn').value.trim(), updatedAt: now() };
+      const rec = { id: sameMonth && !id ? sameMonth.id : s.id, sheetId: sh.id, date, cumulative: manToYen(raw), pending: manToYen($('#sp').value), note: $('#sn').value.trim(), updatedAt: now() };
       await put('snapshots', rec); await loadAll(); renderAll(); toast(sameMonth && !id ? '同じ月の記録を更新しました' : '記録しました');
     });
     const inp = $('#sc');
@@ -744,10 +846,12 @@
         <div class="sumline"><div class="l">毎月の予定 合計</div><div class="r">${man(total)}<small style="font-size:13px;">円</small></div></div>
         <div class="hr"></div>
         <div class="sumline"><div class="l">× 計上 ${pl.length}か月（${range}）</div><div class="r" style="color:var(--ink);">${man(total * pl.length)}<small style="font-size:13px;">円</small></div></div>
-        <div style="font-size:12px; color:var(--secondary); margin-top:8px; line-height:1.6;">うち未記録の残り${left}か月ぶん <b style="color:var(--navy);">${man(total * left)}円</b> を試算に足します。<br><span style="color:var(--tertiary);">判定期間末より早めに仕切るため、目標期限の月（${state.settings.goal_deadline ? ymShort(state.settings.goal_deadline.slice(0, 7)) : ''}）までで計上します。</span></div>
+        ${state.oneoffs.length ? `<div class="sumline" style="margin-top:8px;"><div class="l">＋ 単発の予定 ${state.oneoffs.length}件</div><div class="r" style="color:var(--ink);">${man(state.oneoffs.reduce((a, o) => a + o.amount, 0))}<small style="font-size:13px;">円</small></div></div>` : ''}
+        <div style="font-size:12px; color:var(--secondary); margin-top:8px; line-height:1.6;">うち未記録の残り${left}か月ぶん <b style="color:var(--navy);">${man(total * left)}円</b>${(() => { const r = state.oneoffs.filter(o => o.month > lastYM).reduce((s, o) => s + o.amount, 0); return r ? `と、単発の残り <b style="color:var(--navy);">${man(r)}円</b>` : ''; })()} を試算に足します。<br><span style="color:var(--tertiary);">判定期間末より早めに仕切るため、目標期限の月（${state.settings.goal_deadline ? ymShort(state.settings.goal_deadline.slice(0, 7)) : ''}）までで計上します。</span></div>
       </div>`;
     const prevSheet = (() => { const i = state.sheets.findIndex(x => x.id === state.settings.id); return i > 0 ? state.sheets[i - 1] : null; })();
     const prevFixed = prevSheet ? state.allFixed.filter(x => x.sheetId === prevSheet.id) : [];
+    const prevOne = prevSheet ? state.allOneoffs.filter(x => x.sheetId === prevSheet.id) : [];
     const copyBtn = !state.fixed.length && prevFixed.length ? `<button class="btn ghost" id="copyPrev" style="margin-bottom:12px;">${sheetName(prevSheet)}の予定をコピー（${prevFixed.length}件・月${man(fixedMonthlyTotal(prevFixed))}円）</button>` : '';
     const rows = state.fixed.map(x => `
       <div class="row" data-id="${x.id}"><div class="main"><div class="ttl">${esc(x.name)}${x.recurring ? ' <span class="pill blue" style="font-size:10.5px; padding:2px 7px; vertical-align:2px;">毎年</span>' : ''}</div>${x.note ? `<div class="meta">${esc(x.note)}</div>` : ''}</div>
@@ -756,11 +860,20 @@
       <div class="sec-label">${sheetName(state.settings)}：毎月確実に払う分</div>
       ${state.fixed.length ? `<div class="list">${rows}</div>` : `<div class="empty" style="padding:20px 16px;">家賃・通信費・光熱費・保険・サブスクなど、<br>ANAカード／ANA Payで毎月必ず払う分を入れます。</div>`}
       ${copyBtn}
-      <button class="add-btn" id="planAdd2">＋ 予定を追加</button>
+      <button class="add-btn" id="planAdd2">＋ 毎月の予定を追加</button>
       ${state.fixed.length && laterSheets().length ? `<button class="btn ghost" id="propAll">すべて翌年以降にも反映</button>
-        <div style="font-size:11.5px; color:var(--tertiary); margin:8px 2px 0; line-height:1.5;">${laterSheets().map(sheetName).join('・')}に反映します。1件ずつ反映したいときは、各予定を開いて「翌年以降にも反映」を押します。</div>` : ''}`;
+        <div style="font-size:11.5px; color:var(--tertiary); margin:8px 2px 0; line-height:1.5;">${laterSheets().map(sheetName).join('・')}に反映します。1件ずつ反映したいときは、各予定を開いて「翌年以降にも反映」を押します。</div>` : ''}
+
+      <div class="sec-label" style="margin-top:20px;">${sheetName(state.settings)}：単発の予定（この月だけ）</div>
+      ${state.oneoffs.length ? `<div class="list">${state.oneoffs.map(o => { const done = o.month <= lastYM && latest; return `
+        <div class="row" data-one="${o.id}" ${done ? 'style="opacity:.55;"' : ''}><div class="main"><div class="ttl">${ymShort(o.month)}　${esc(o.name)}${o.recurring ? ' <span class="pill blue" style="font-size:10.5px; padding:2px 7px; vertical-align:2px;">毎年</span>' : ''}</div><div class="meta">${done ? '記録済み（累計に含まれています）' : (o.note ? esc(o.note) : ymFull(o.month))}</div></div>
+        <div class="amt">${man(o.amount)}円</div><span class="chev">›</span></div>`; }).join('')}</div>`
+        : `<div class="empty" style="padding:16px;">固定資産税・自動車税・旅行・家電・年払いの保険など、<br>決まった月に1回だけ払うものを入れます。</div>`}
+      <button class="add-btn" id="oneAdd">＋ 単発の予定を追加</button>`;
     bindSheetBar($('#planScroll'), renderPlan);
-    $$('#planScroll .row').forEach(el => el.onclick = () => openFixedSheet(el.dataset.id));
+    $$('#planScroll .row[data-id]').forEach(el => el.onclick = () => openFixedSheet(el.dataset.id));
+    $$('#planScroll .row[data-one]').forEach(el => el.onclick = () => openOneoffSheet(el.dataset.one));
+    $('#oneAdd').onclick = () => openOneoffSheet(null);
     $('#planAdd2').onclick = () => openFixedSheet(null);
     const pa = $('#propAll');
     if (pa) pa.onclick = async () => {
@@ -771,6 +884,7 @@
     const cp = $('#copyPrev');
     if (cp) cp.onclick = async () => {
       let o = 0; for (const x of prevFixed) await put('fixed', { id: uid(), sheetId: state.settings.id, seriesId: x.seriesId || x.id, recurring: !!x.recurring, name: x.name, monthly: x.monthly, note: x.note || '', order: o++, updatedAt: now() });
+      if (!state.oneoffs.length) for (const x of prevOne.filter(x => x.recurring)) { const m = sameMonthIn(state.settings, x.month); if (m) await put('oneoffs', { ...x, id: uid(), sheetId: state.settings.id, seriesId: x.seriesId || x.id, month: m, updatedAt: now() }); }
       await loadAll(); renderPlan(); renderHome(); toast('コピーしました');
     };
   }
@@ -820,6 +934,63 @@
     const fd = $('#fixDel');
     if (fd) fd.onclick = async () => { if (!confirm('この予定を削除しますか？')) return; closeSheet(); await del('fixed', id); await loadAll(); renderPlan(); renderHome(); toast('削除しました'); };
     if (!id) setTimeout(() => $('#fn').focus(), 350);
+  }
+
+  async function propagateOneoff(o) {
+    const later = laterSheets(); if (!later.length) return 0;
+    const seriesId = o.seriesId || o.id; let k = 0;
+    await put('oneoffs', { ...o, seriesId, recurring: true, updatedAt: now() });
+    for (const sh of later) {
+      const m = sameMonthIn(sh, o.month); if (!m) continue;
+      const ex = state.allOneoffs.find(x => x.sheetId === sh.id && (x.seriesId === seriesId || x.id === seriesId));
+      await put('oneoffs', { id: ex ? ex.id : uid(), sheetId: sh.id, seriesId, recurring: true, month: m, name: o.name, amount: o.amount, note: o.note || '', updatedAt: now() }); k++;
+    }
+    return k;
+  }
+  function openOneoffSheet(id) {
+    const months = oneoffMonths();
+    const o = id ? state.oneoffs.find(x => x.id === id) : { id: uid(), name: '', amount: 0, note: '', month: (() => { const latest = state.snaps[state.snaps.length - 1]; const l = latest ? latest.date.slice(0, 7) : ''; return months.find(m => m > l) || months[0]; })() };
+    openSheet(id ? '単発の予定を編集' : '単発の予定を追加', `
+      <div class="field"><label>払う月</label>
+        <select id="om" class="sel">${months.map(m => `<option value="${m}" ${m === o.month ? 'selected' : ''}>${ymFull(m)}</option>`).join('')}</select>
+        <div class="hint">その月の月末の記録に入る想定で計算します（目標期限の月まで）。</div></div>
+      <div class="field"><label>支払い名</label><input type="text" id="on" value="${esc(o.name)}" placeholder="固定資産税 / 旅行 / 家電 など"></div>
+      <div class="field"><label>金額</label><div class="inwrap"><input type="number" class="big" inputmode="decimal" step="0.1" id="oa" value="${o.amount ? yenToMan(o.amount) : ''}" placeholder="0"><span class="unit">万円</span></div></div>
+      <div class="field"><label>メモ（任意）</label><input type="text" id="oo" value="${esc(o.note || '')}" placeholder="支払い方法・期限など"></div>
+      ${laterSheets().length ? `<button class="btn ghost" id="oneProp" style="margin-bottom:6px;">保存して翌年以降の同じ月にも反映</button>
+        <div class="hint" style="font-size:11.5px; color:var(--tertiary); margin:0 2px 10px; line-height:1.5;">毎年同じ月に払うもの（固定資産税・自動車税・年払いの保険など）向け。「毎年」の印が付き、新しいシートにも自動で引き継ぎます。</div>` : ''}
+      ${id ? `<button class="del-btn" id="oneDel">この予定を削除（${sheetName(state.settings)}のみ）</button>` : ''}
+    `, async () => {
+      const rec = readOne(); if (!rec) return false;
+      await put('oneoffs', rec); await loadAll(); renderPlan(); renderHome(); toast('保存しました');
+    });
+    function readOne() {
+      const name = $('#on').value.trim(), amount = manToYen($('#oa').value);
+      if (!name || !amount) { toast('支払い名と金額を入れてください'); return null; }
+      return { ...o, id: o.id, sheetId: state.settings.id, month: $('#om').value, name, amount, note: $('#oo').value.trim(), updatedAt: now() };
+    }
+    const op = $('#oneProp');
+    if (op) op.onclick = async () => { const rec = readOne(); if (!rec) return; await put('oneoffs', rec); await loadAll(); const k = await propagateOneoff(rec); closeSheet(); await loadAll(); renderPlan(); renderHome(); toast(`翌年以降の${k}シートにも反映しました`); };
+    const od = $('#oneDel');
+    if (od) od.onclick = async () => { if (!confirm('この予定を削除しますか？')) return; closeSheet(); await del('oneoffs', id); await loadAll(); renderPlan(); renderHome(); toast('削除しました'); };
+  }
+
+  // ===================== バックアップ =====================
+  const BACKUP_EVERY = 30 * DAY;
+  function backupDue() {
+    if (!state.allSnaps.length) return false;
+    const last = state.prefs.last_backup || 0;
+    if (now() < (state.prefs.backup_snooze || 0)) return false;
+    return now() - last >= BACKUP_EVERY;
+  }
+  const lastBackupText = () => state.prefs.last_backup ? `${Math.max(0, Math.floor((now() - state.prefs.last_backup) / DAY))}日前（${mdLabel(toISO(new Date(state.prefs.last_backup)))}）` : 'まだ一度もありません';
+  function backupCardHTML() {
+    if (!backupDue()) return '';
+    return `<div class="card" style="padding:14px 15px;">
+      <div style="display:flex; align-items:center; gap:8px; font-size:15px; font-weight:700; color:var(--navy);"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg>バックアップしておきましょう</div>
+      <div style="font-size:12.5px; color:var(--secondary); line-height:1.6; margin:4px 0 12px;">前回：${lastBackupText()}。データはこの端末の中にだけあるので、機種変更やデータ削除に備えて書き出しておくと安心です。</div>
+      <div style="display:flex; gap:8px;"><button class="btn ghost" id="bkLater" style="flex:1; padding:11px;">あとで</button><button class="btn primary" id="bkNow" style="flex:1.4; padding:11px; margin:0;">今すぐ書き出す</button></div>
+    </div>`;
   }
 
   // ===================== アーカイブ概要 =====================
@@ -872,7 +1043,8 @@
 
       <div class="sec-label">データ</div>
       <div class="card" style="padding:12px;">
-        <button class="btn ghost" id="btnExport" style="margin-bottom:10px;">JSON書き出し（全シート）</button>
+        <div style="font-size:12.5px; color:var(--secondary); margin:2px 2px 10px;">前回のバックアップ：${lastBackupText()}</div>
+        <button class="btn ghost" id="btnExport" style="margin-bottom:10px;">バックアップを書き出す（全シート）</button>
         <button class="btn ghost" id="btnImport">JSON取り込み</button>
         <input type="file" id="importFile" accept="application/json" style="display:none;">
       </div>
@@ -919,12 +1091,23 @@
 
   // ===================== export / import =====================
   const SCHEMA = 'ana300.v3';
-  function exportData() {
-    const data = { schema: SCHEMA, exportedAt: new Date().toISOString(), prefs: state.prefs, sheets: state.sheets, snapshots: state.allSnaps, fixed: state.allFixed, tasks: state.allTasks };
-    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob); const a = document.createElement('a');
-    a.href = url; a.download = 'ana300-sync.json'; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
-    toast('書き出しました');
+  // iPhoneでは共有シート（「ファイルに保存」）、それ以外はダウンロード。成功したら日付を記録
+  async function exportData() {
+    const data = { schema: SCHEMA, exportedAt: new Date().toISOString(), prefs: state.prefs, sheets: state.sheets, snapshots: state.allSnaps, fixed: state.allFixed, tasks: state.allTasks, oneoffs: state.allOneoffs };
+    const json = JSON.stringify(data, null, 2);
+    const name = `ana300-backup-${todayISO().replace(/-/g, '')}.json`;
+    let ok = false;
+    try {
+      const file = new File([json], name, { type: 'application/json' });
+      if (navigator.canShare && navigator.canShare({ files: [file] })) { await navigator.share({ files: [file], title: '300万メーター バックアップ' }); ok = true; }
+    } catch (e) { if (e && e.name === 'AbortError') { toast('書き出しをやめました'); return; } }
+    if (!ok) {
+      const url = URL.createObjectURL(new Blob([json], { type: 'application/json' })); const a = document.createElement('a');
+      a.href = url; a.download = name; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(url), 1000);
+      ok = true;
+    }
+    state.prefs = { ...state.prefs, last_backup: now(), backup_snooze: 0 }; await put('settings', state.prefs);
+    toast('バックアップを書き出しました'); RENDER[currentView](); if (currentView !== 'home') renderHome();
   }
   async function mergeInto(storeName, items, local) {
     const m = new Map(local.map(x => [x.id, x]));
@@ -938,6 +1121,7 @@
         await mergeInto('snapshots', data.snapshots, state.allSnaps);
         await mergeInto('fixed', data.fixed, state.allFixed);
         await mergeInto('tasks', data.tasks, state.allTasks);
+        await mergeInto('oneoffs', data.oneoffs, state.allOneoffs);
       } else if (data.schema === 'ana300.v2') {   // v2.0〜2.1の書き出し → 今開いているシートへ
         await mergeInto('snapshots', (data.snapshots || []).map(s => ({ ...s, sheetId: s.sheetId || state.settings.id })), state.allSnaps);
       } else { toast('対応していないファイルです'); return; }
