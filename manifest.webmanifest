@@ -1,7 +1,7 @@
 {
   "name": "300万メーター",
   "short_name": "300万メーター",
-  "description": "ANA SFC 年間300万円決済を、無理なく狙うか判断するためのアプリ",
+  "description": "毎月末の累計と毎月確実に払う予定から、ANA 300万円にいつ届くかを年ごとに試算するアプリ",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",

@@ -23,7 +23,6 @@
     --mohican: #00AFF0; --mohican-soft: #E1F4FD;
     --amber: #F59E0B; --amber-soft: #FEF3E2;
     --green: #2FA66A; --green-soft: #E7F5EE;
-    --blue: #0B308E;
     --safe-top: env(safe-area-inset-top, 0px);
     --safe-bottom: env(safe-area-inset-bottom, 0px);
   }
@@ -36,11 +35,19 @@
   .view.active { display: flex; }
   .navbar { display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; min-height: 44px; position: relative; background: rgba(242,242,247,0.92); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border-bottom: 0.5px solid var(--sep); z-index: 10; }
   .navbar .title { font-size: 17px; font-weight: 700; position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); pointer-events: none; white-space: nowrap; }
-  .navbar .lead { font-size: 13px; color: var(--secondary); font-weight: 500; }
+  .navbar .lead { font-size: 12.5px; color: var(--secondary); font-weight: 500; max-width: 30%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .icon-btn { min-width: 34px; height: 34px; display: flex; align-items: center; justify-content: center; color: var(--navy); background: none; border: 0; cursor: pointer; font-size: 22px; font-weight: 500; font-family: inherit; }
-  .scroll { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; padding: 14px 14px calc(20px + var(--safe-bottom)); }
+  .scroll { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; padding: 12px 14px calc(20px + var(--safe-bottom)); }
+
+  /* シート切替 */
+  .sheetbar { display: flex; gap: 6px; margin-bottom: 12px; }
+  .sheetbar button { flex: 1; border: 0; background: #E9E9ED; border-radius: 12px; padding: 8px 4px 7px; font-family: inherit; cursor: pointer; color: var(--secondary); line-height: 1.25; }
+  .sheetbar button b { display: block; font-size: 13.5px; font-weight: 700; }
+  .sheetbar button span { display: block; font-size: 10.5px; font-weight: 500; opacity: .85; }
+  .sheetbar button.on { background: var(--navy); color: #fff; }
 
   .card { background: var(--card); border-radius: 16px; padding: 16px; margin-bottom: 12px; }
+  .tap { cursor: pointer; }
   .sec-label { font-size: 12px; font-weight: 600; color: var(--secondary); margin: 6px 2px 8px; }
 
   .hero { background: linear-gradient(150deg, var(--navy) 0%, var(--navy-soft) 100%); color: #fff; border-radius: 20px; padding: 20px; margin-bottom: 14px; }
@@ -48,14 +55,15 @@
   .hero .big { font-size: 34px; font-weight: 700; letter-spacing: -.01em; margin: 2px 0; }
   .hero .big small { font-size: 18px; font-weight: 600; }
   .hero .sub { font-size: 13px; opacity: .85; }
-  .gauge { height: 12px; border-radius: 99px; background: rgba(255,255,255,.18); overflow: hidden; margin: 14px 0 8px; }
-  .gauge > i { display: block; height: 100%; border-radius: 99px; background: linear-gradient(90deg, var(--mohican), #5fd0ff); transition: width .5s cubic-bezier(.32,.72,0,1); }
-  .hero-row { display: flex; justify-content: space-between; font-size: 12px; opacity: .85; }
+  .gauge { height: 12px; border-radius: 99px; background: rgba(255,255,255,.18); overflow: hidden; margin: 14px 0 8px; position: relative; }
+  .gauge > b { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 99px; background: repeating-linear-gradient(45deg, rgba(255,255,255,.38) 0 5px, rgba(255,255,255,.22) 5px 10px); }
+  .gauge > i { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 99px; background: linear-gradient(90deg, var(--mohican), #5fd0ff); transition: width .5s cubic-bezier(.32,.72,0,1); }
+  .hero-row { display: flex; justify-content: space-between; font-size: 12px; opacity: .85; gap: 8px; }
 
   .forecast { background: var(--card); border-radius: 16px; padding: 16px; margin-bottom: 12px; }
   .forecast .k { font-size: 12px; color: var(--secondary); font-weight: 600; }
   .forecast .v { font-size: 26px; font-weight: 700; margin: 2px 0 6px; color: var(--navy); }
-  .forecast .d { font-size: 13px; line-height: 1.7; color: #38465e; }
+  .forecast .d { font-size: 13px; line-height: 1.7; color: #38465e; white-space: pre-wrap; }
 
   .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px; }
   .stat { background: var(--card); border-radius: 14px; padding: 13px 14px; }
@@ -63,7 +71,7 @@
   .stat .v { font-size: 20px; font-weight: 700; margin-top: 2px; }
   .stat .v small { font-size: 12px; font-weight: 600; color: var(--secondary); }
 
-  .pill { display: inline-flex; align-items: center; font-size: 12.5px; font-weight: 600; padding: 5px 11px; border-radius: 99px; }
+  .pill { display: inline-flex; align-items: center; font-size: 12px; font-weight: 600; padding: 5px 10px; border-radius: 99px; white-space: nowrap; }
   .pill.green { background: var(--green-soft); color: var(--green); }
   .pill.amber { background: var(--amber-soft); color: #B26A00; }
   .pill.blue { background: var(--mohican-soft); color: #0678A8; }
@@ -73,11 +81,11 @@
   .msg.calm { background: #EEF1F6; color: #38465e; }
   .msg.good { background: var(--green-soft); color: #1f6b46; }
   .msg.warn { background: var(--amber-soft); color: #5b4a2a; }
-  .msg.tap { cursor: pointer; display: flex; align-items: center; gap: 10px; }
+  .msg.tap { display: flex; align-items: center; gap: 10px; }
 
   .chart { background: var(--card); border-radius: 16px; padding: 14px 10px 8px; margin-bottom: 12px; }
   .chart svg { display: block; width: 100%; height: auto; }
-  .legend { display: flex; gap: 14px; justify-content: center; font-size: 11px; color: var(--secondary); padding: 6px 0 2px; }
+  .legend { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; font-size: 11px; color: var(--secondary); padding: 6px 0 2px; }
   .legend span { display: inline-flex; align-items: center; gap: 5px; }
   .legend i { display: inline-block; width: 14px; height: 0; border-top: 2.5px solid; }
 
@@ -91,11 +99,33 @@
   .row .amt { font-size: 15px; font-weight: 700; text-align: right; white-space: nowrap; }
   .row .amt small { font-size: 11.5px; font-weight: 600; display: block; margin-top: 1px; color: var(--green); }
   .chev { color: var(--tertiary); }
-  .empty { text-align: center; color: var(--secondary); font-size: 13.5px; padding: 34px 16px; line-height: 1.8; }
+  .empty { text-align: center; color: var(--secondary); font-size: 13.5px; padding: 30px 16px; line-height: 1.8; }
 
+  .sumline { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; }
+  .sumline .l { font-size: 13px; color: var(--secondary); }
+  .sumline .r { font-size: 20px; font-weight: 700; color: var(--navy); white-space: nowrap; }
+  .hr { height: 0.5px; background: var(--sep); margin: 12px 0; }
+
+  .arch { background: var(--card); border-radius: 16px; padding: 14px 16px; margin-bottom: 10px; }
+  .arch .h { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+  .arch .h b { font-size: 15px; }
+  .arch .p { font-size: 11.5px; color: var(--secondary); margin-top: 2px; }
+  .arch .g { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px; margin-top: 10px; }
+  .arch .g div { background: #F6F7FA; border-radius: 10px; padding: 8px 9px; }
+  .arch .g .k { font-size: 10.5px; color: var(--secondary); }
+  .arch .g .v { font-size: 14px; font-weight: 700; margin-top: 1px; }
+
+  .task-add { display: flex; gap: 8px; margin-bottom: 12px; }
+  .task-add input { flex: 1; }
+  .task-add button { border: 0; background: var(--navy); color: #fff; font-family: inherit; font-size: 14px; font-weight: 700; border-radius: 12px; padding: 0 16px; cursor: pointer; }
+  .ck { width: 24px; height: 24px; border-radius: 50%; border: 2px solid var(--tertiary); flex-shrink: 0; display: flex; align-items: center; justify-content: center; cursor: pointer; background: none; padding: 0; }
+  .ck.on { background: var(--green); border-color: var(--green); }
+  .row.done .ttl { color: var(--tertiary); text-decoration: line-through; font-weight: 500; }
+  .link-btn { border: 0; background: none; font-family: inherit; font-size: 13px; font-weight: 600; color: var(--navy); cursor: pointer; padding: 4px 2px; }
   .btn { width: 100%; border: 0; border-radius: 13px; padding: 14px; font-family: inherit; font-size: 15px; font-weight: 700; cursor: pointer; }
   .btn.primary { background: var(--navy); color: #fff; margin-bottom: 12px; }
   .btn.ghost { background: #E7EBF3; color: var(--navy); }
+  .add-btn { width: 100%; border: 1.5px dashed var(--tertiary); background: none; border-radius: 14px; padding: 13px; font-family: inherit; font-size: 14px; font-weight: 600; color: var(--navy); cursor: pointer; margin-bottom: 12px; }
 
   .tabbar { display: flex; border-top: 0.5px solid var(--sep); background: rgba(248,248,250,0.94); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); padding-bottom: var(--safe-bottom); }
   .tab { flex: 1; border: 0; background: none; padding: 7px 0 5px; display: flex; flex-direction: column; align-items: center; gap: 3px; color: var(--tertiary); cursor: pointer; font-family: inherit; }
@@ -109,7 +139,7 @@
   .sheet.show { transform: translateY(0); }
   .sheet-head { display: flex; align-items: center; justify-content: space-between; padding: 14px 16px 8px; }
   .sheet-head .t { font-size: 17px; font-weight: 700; }
-  .sheet-head button { background: none; border: 0; font-family: inherit; font-size: 15px; font-weight: 600; color: var(--blue); cursor: pointer; }
+  .sheet-head button { background: none; border: 0; font-family: inherit; font-size: 15px; font-weight: 600; color: var(--navy); cursor: pointer; }
   .sheet-body { overflow-y: auto; padding: 4px 16px 20px; }
   .del-btn { width: 100%; border: 0; background: none; color: #B26A00; font-family: inherit; font-size: 14px; font-weight: 600; padding: 12px; cursor: pointer; }
 
@@ -117,6 +147,7 @@
   .field > label { display: block; font-size: 12.5px; font-weight: 600; color: var(--secondary); margin: 0 2px 6px; }
   .field .hint { font-size: 11.5px; color: var(--tertiary); margin: 5px 2px 0; line-height: 1.5; }
   input[type=text], input[type=number], input[type=date] { width: 100%; font-family: inherit; font-size: 16px; color: var(--ink); background: var(--card); border: 0; border-radius: 12px; padding: 13px 14px; outline: none; -webkit-appearance: none; appearance: none; min-height: 48px; }
+  .card input[type=text], .card input[type=number], .card input[type=date] { background: #F2F2F7; }
   input[type=number] { text-align: right; }
   .inwrap { position: relative; }
   .inwrap input { padding-right: 48px; }
@@ -141,6 +172,14 @@
     <div class="navbar"><span style="width:34px;"></span><span class="title">記録</span><button class="icon-btn" id="logAdd" aria-label="記録する">＋</button></div>
     <div class="scroll" id="logScroll"></div>
   </div>
+  <div id="view-plan" class="view">
+    <div class="navbar"><span style="width:34px;"></span><span class="title">予定</span><button class="icon-btn" id="planAdd" aria-label="予定を追加">＋</button></div>
+    <div class="scroll" id="planScroll"></div>
+  </div>
+  <div id="view-tasks" class="view">
+    <div class="navbar"><span style="width:34px;"></span><span class="title">やること</span><span style="width:34px;"></span></div>
+    <div class="scroll" id="tasksScroll"></div>
+  </div>
   <div id="view-settings" class="view">
     <div class="navbar"><span style="width:34px;"></span><span class="title">設定</span><span style="width:34px;"></span></div>
     <div class="scroll" id="settingsScroll"></div>
@@ -148,7 +187,9 @@
 
   <div class="tabbar">
     <button class="tab active" data-v="home"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 4 9v11h5v-6h6v6h5V9z"/></svg><span>ホーム</span></button>
-    <button class="tab" data-v="log"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="17" rx="2.5"/><path d="M3 9h18M8 2v4M16 2v4"/></svg><span>記録</span></button>
+    <button class="tab" data-v="log"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19V5M4 19h16M8 15l4-4 3 3 5-6"/></svg><span>記録</span></button>
+    <button class="tab" data-v="plan"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="17" rx="2.5"/><path d="M3 9h18M8 2v4M16 2v4M8.5 14.5l2.2 2.2 4.8-4.8"/></svg><span>予定</span></button>
+    <button class="tab" data-v="tasks"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6h11M9 12h11M9 18h11"/><path d="M3.5 6l1.2 1.2L7 5M3.5 12l1.2 1.2L7 11M3.5 18l1.2 1.2L7 17"/></svg><span>やること</span></button>
     <button class="tab" data-v="settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.2"/><path d="M12 2v3M12 19v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M2 12h3M19 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1"/></svg><span>設定</span></button>
   </div>
 </div>
@@ -166,12 +207,12 @@
   const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
   const now = () => Date.now();
 
-  const APP_VERSION = '2.0.0';
+  const APP_VERSION = '2.3.0';
 
   // ---------- IndexedDB ----------
   const DB_NAME = 'ana300-db';
-  const DB_VERSION = 3;                    // v2.0: snapshots ストア追加（旧ストアは使わない）
-  const STORES = ['settings', 'snapshots'];
+  const DB_VERSION = 6;   // v2.2: sheets（年ごと）/ fixed（予定） v2.3: tasks（やること）
+  const STORES = ['settings', 'sheets', 'snapshots', 'fixed', 'tasks'];
   let _db = null;
   function openDB() {
     return new Promise((resolve, reject) => {
@@ -181,27 +222,12 @@
       req.onerror = () => reject(req.error);
     });
   }
-  const store = (s, m='readonly') => _db.transaction(s, m).objectStore(s);
+  const store = (s, m = 'readonly') => _db.transaction(s, m).objectStore(s);
   const getAll = (s) => new Promise((res, rej) => { const r = store(s).getAll(); r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error); });
-  const put = (s, v) => new Promise((res, rej) => { const r = store(s,'readwrite').put(v); r.onsuccess = () => res(); r.onerror = () => rej(r.error); });
-  const del = (s, id) => new Promise((res, rej) => { const r = store(s,'readwrite').delete(id); r.onsuccess = () => res(); r.onerror = () => rej(r.error); });
+  const put = (s, v) => new Promise((res, rej) => { const r = store(s, 'readwrite').put(v); r.onsuccess = () => res(); r.onerror = () => rej(r.error); });
+  const del = (s, id) => new Promise((res, rej) => { const r = store(s, 'readwrite').delete(id); r.onsuccess = () => res(); r.onerror = () => rej(r.error); });
 
-  // ---------- state ----------
-  const DEFAULTS = {
-    id: 'main',
-    target_amount: 3000000,
-    period_start: '2026-12-16',
-    period_end: '2027-12-15',
-    assumed_monthly: 200000,   // 記録が少ないうちに使う想定ペース
-  };
-  const state = { settings: { ...DEFAULTS }, snaps: [] };
-  async function loadAll() {
-    const s = (await getAll('settings'))[0];
-    state.settings = s ? { ...DEFAULTS, ...s, id: 'main' } : { ...DEFAULTS };
-    state.snaps = (await getAll('snapshots')).sort((a, b) => a.date < b.date ? -1 : a.date > b.date ? 1 : 0);
-  }
-
-  // ---------- format ----------
+  // ---------- format / date ----------
   const man = (n) => { const v = (n || 0) / 10000; const r = Math.abs(v) >= 100 ? Math.round(v) : Math.round(v * 10) / 10; return r.toLocaleString('ja-JP') + '万'; };
   const signMan = (n) => (n >= 0 ? '+' : '') + man(n);
   const pad = (n) => String(n).padStart(2, '0');
@@ -211,69 +237,186 @@
   const mdLabel = (s) => { const d = fromISO(s); return `${d.getFullYear()}/${d.getMonth() + 1}/${d.getDate()}`; };
   const DAY = 86400000, MONTH_DAYS = 30.44;
   const monthsBetween = (a, b) => (b - a) / DAY / MONTH_DAYS;
+  const monthEndOf = (ym) => { const [y, m] = ym.split('-').map(Number); return new Date(y, m, 0); };
+  const ymShort = (ym) => `${Number(ym.slice(5))}月`;
+  const todayISO = () => toISO(new Date());
   function esc(s) { return String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c])); }
   function parseNum(v) { const n = Number(String(v).replace(/[^0-9.-]/g, '')); return isNaN(n) ? 0 : n; }
   const manToYen = (v) => Math.round(parseNum(v) * 10000);
   const yenToMan = (y) => Math.round(((y || 0) / 10000) * 1000) / 1000;
 
-  // その月の末日（記録日の初期値）
+  // ---------- シート（判定期間1年分） ----------
+  const SHEET_DEFAULT = {
+    target_amount: 3000000,
+    period_start: '2026-12-16',
+    period_end: '2027-12-15',
+    goal_deadline: '2027-11-30',   // 判定期間末より早めに仕切る自分の目標期限
+    assumed_monthly: 200000,       // 記録が少ないうちに使う想定ペース（予定分も含む月の総額）
+  };
+  // 次のシート：前シートの翌日から1年。目標期限は期間末の前月末（12/15終わりなら11/30）
+  function nextSheetFrom(prev) {
+    const st = new Date(fromISO(prev.period_end).getTime() + DAY);
+    const en = new Date(st.getFullYear() + 1, st.getMonth(), st.getDate() - 1);
+    const goal = prev.goal_deadline && prev.goal_deadline < prev.period_end ? new Date(en.getFullYear(), en.getMonth(), 0) : en;
+    return { id: uid(), period_start: toISO(st), period_end: toISO(en), goal_deadline: toISO(goal), target_amount: prev.target_amount, assumed_monthly: prev.assumed_monthly, updatedAt: now() };
+  }
+
+  const state = { prefs: { id: 'prefs' }, sheets: [], activeList: [], archived: [], settings: null, allSnaps: [], allFixed: [], allTasks: [], snaps: [], fixed: [], tasks: [] };
+
+  async function loadAll() {
+    const settingsRows = await getAll('settings');
+    state.prefs = settingsRows.find(x => x.id === 'prefs') || { id: 'prefs' };
+    const legacy = settingsRows.find(x => x.id === 'main');   // v2.1以前の設定
+    let sheets = await getAll('sheets');
+    if (!sheets.length) {
+      const base = { ...SHEET_DEFAULT };
+      if (legacy) for (const k of Object.keys(SHEET_DEFAULT)) if (legacy[k] != null) base[k] = legacy[k];
+      const first = { id: uid(), ...base, updatedAt: now() };
+      await put('sheets', first); sheets = [first];
+    }
+    sheets.sort((a, b) => a.period_start < b.period_start ? -1 : 1);
+    // 期間が終わっていないシートを常に3枚（今年分・翌年分・翌々年分）
+    const t = todayISO();
+    let active = sheets.filter(s => s.period_end >= t);
+    while (active.length < 3) { const ns = nextSheetFrom(sheets[sheets.length - 1]); await put('sheets', ns); sheets.push(ns); if (ns.period_end >= t) active.push(ns); }
+    state.sheets = sheets;
+    state.activeList = active;
+    state.archived = sheets.filter(s => s.period_end < t).reverse();
+
+    // 旧データ（sheetIdなし）を該当シートへ移す
+    const snaps = await getAll('snapshots');
+    for (const s of snaps) if (!s.sheetId) { const sh = sheets.find(x => s.date >= x.period_start && s.date <= x.period_end) || active[0]; s.sheetId = sh.id; await put('snapshots', s); }
+    const fixed = await getAll('fixed');
+    for (const f of fixed) if (!f.sheetId) { f.sheetId = active[0].id; await put('fixed', f); }
+    state.allSnaps = snaps; state.allFixed = fixed;
+
+    const aid = active.some(s => s.id === state.prefs.active_sheet) ? state.prefs.active_sheet : active[0].id;
+    state.settings = sheets.find(s => s.id === aid);
+    state.snaps = snaps.filter(s => s.sheetId === aid).sort((a, b) => a.date < b.date ? -1 : a.date > b.date ? 1 : 0);
+    state.fixed = fixed.filter(f => f.sheetId === aid).sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+    const tasks = await getAll('tasks');
+    for (const t of tasks) if (!t.sheetId) { t.sheetId = active[0].id; await put('tasks', t); }
+    state.allTasks = tasks;
+    state.tasks = tasks.filter(t => t.sheetId === aid).sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+  }
+  const SHEET_NAMES = ['今年分', '翌年分', '翌々年分'];
+  function sheetName(sh) { const i = state.activeList.findIndex(x => x.id === sh.id); return i >= 0 && i < 3 ? SHEET_NAMES[i] : `${fromISO(sh.period_end).getFullYear()}年分`; }
+  const sheetSpan = (sh) => { const a = fromISO(sh.period_start), b = fromISO(sh.period_end); return `${a.getFullYear() % 100}/${a.getMonth() + 1}〜${b.getFullYear() % 100}/${b.getMonth() + 1}`; };
+  const isCurrentSheet = () => state.activeList[0] && state.settings.id === state.activeList[0].id;
+  async function saveSheet(patch) { state.settings = { ...state.settings, ...patch, updatedAt: now() }; await put('sheets', state.settings); await loadAll(); }
+
+  function sheetBarHTML() {
+    return `<div class="sheetbar">${state.activeList.slice(0, 3).map((sh, i) =>
+      `<button data-sheet="${sh.id}" class="${sh.id === state.settings.id ? 'on' : ''}"><b>${SHEET_NAMES[i]}</b><span>${sheetSpan(sh)}</span></button>`).join('')}</div>`;
+  }
+  function bindSheetBar(root, rerender) {
+    root.querySelectorAll('[data-sheet]').forEach(b => b.onclick = async () => {
+      if (b.dataset.sheet === state.settings.id) return;
+      state.prefs = { ...state.prefs, active_sheet: b.dataset.sheet }; await put('settings', state.prefs);
+      await loadAll(); rerender();
+    });
+  }
+
+  // 予定を計上する月：判定期間開始の翌月（1日開始ならその月）〜 目標期限の月
+  // 例）12/16開始・11/30期限 → 1月〜11月の11か月
+  function goalOf(s) { const start = fromISO(s.period_start), end = fromISO(s.period_end); let g = fromISO(s.goal_deadline || s.period_end); if (isNaN(g) || g > end || g < start) g = end; return g; }
+  function planMonths(s = state.settings) {
+    const start = fromISO(s.period_start), goal = goalOf(s);
+    let y = start.getFullYear(), m = start.getMonth();
+    if (start.getDate() !== 1) { m++; if (m > 11) { m = 0; y++; } }
+    const out = [];
+    while (y < goal.getFullYear() || (y === goal.getFullYear() && m <= goal.getMonth())) { out.push(`${y}-${pad(m + 1)}`); m++; if (m > 11) { m = 0; y++; } }
+    return out;
+  }
+  const fixedMonthlyTotal = (list = state.fixed) => list.reduce((a, x) => a + (x.monthly || 0), 0);
+
+  // 記録日の初期値：その月の末日（月初10日までは先月末）。シートの期間内に収める
   function defaultSnapDate() {
-    const t = new Date();
-    const last = new Date(t.getFullYear(), t.getMonth() + 1, 0);
-    // 月の前半なら「先月末」の記録とみなす
-    if (t.getDate() <= 10) return toISO(new Date(t.getFullYear(), t.getMonth(), 0));
-    return toISO(last);
+    const s = state.settings, t = new Date();
+    if (todayISO() > s.period_end) return s.period_end;
+    let d = t.getDate() <= 10 ? new Date(t.getFullYear(), t.getMonth(), 0) : new Date(t.getFullYear(), t.getMonth() + 1, 0);
+    let iso = toISO(d);
+    if (iso < s.period_start) { const st = fromISO(s.period_start); iso = toISO(new Date(st.getFullYear(), st.getMonth() + 1, 0)); }
+    if (iso > s.period_end) iso = s.period_end;
+    return iso;
   }
 
   // ---------- 試算 ----------
   function forecast() {
     const s = state.settings;
     const target = s.target_amount;
-    const start = fromISO(s.period_start), end = fromISO(s.period_end);
-    const totalMonths = Math.max(0.1, monthsBetween(start, end));
+    const start = fromISO(s.period_start), end = fromISO(s.period_end), goal = goalOf(s);
     const today = new Date(); today.setHours(0, 0, 0, 0);
     const latest = state.snaps[state.snaps.length - 1] || null;
     const cur = latest ? latest.cumulative : 0;
-    const asOf = latest ? fromISO(latest.date) : (today < start ? start : today);
+    const asOf = latest ? fromISO(latest.date) : (today < start ? start : today > end ? end : today);
     const elapsed = Math.max(0, monthsBetween(start, asOf));
-    const remainMonths = Math.max(0, monthsBetween(asOf, end));
+    const remainMonths = Math.max(0, monthsBetween(asOf, goal));
+    const remainToEnd = Math.max(0, monthsBetween(asOf, end));
     const remain = Math.max(0, target - cur);
 
-    // ペース：1か月以上たっていれば実績、それまでは想定値
     let pace, paceSrc;
     if (latest && elapsed >= 1) { pace = cur / elapsed; paceSrc = 'actual'; }
     else { pace = s.assumed_monthly; paceSrc = 'assumed'; }
 
+    // 予定分：最新記録の月より後の計上月だけ足す（記録済みの月は累計に含まれる）
+    const plan = planMonths(s);
+    const fixedMonthly = fixedMonthlyTotal();
+    const lastYM = latest ? latest.date.slice(0, 7) : toISO(start).slice(0, 7);
+    const planLeft = plan.filter(ym => ym > lastYM);
+    const fixedRemaining = fixedMonthly * planLeft.length;
+    const secured = cur + fixedRemaining;
+    const varPace = fixedMonthly > 0 ? Math.max(0, pace - fixedMonthly) : pace;
+
     const needMonthly = remainMonths > 0 ? remain / remainMonths : remain;
-    const landing = cur + pace * remainMonths;
+    const needVar = Math.max(0, target - secured);
+    const needVarMonthly = remainMonths > 0 ? needVar / remainMonths : needVar;
+    const landing = secured + varPace * remainMonths;
+    const landingEnd = landing + varPace * Math.max(0, remainToEnd - remainMonths);
+
+    // 到達日：予定外は日割り、予定分は各月末に加算してシミュレーション
     let reachDate = null, monthsToReach = null;
     if (cur >= target) { reachDate = asOf; monthsToReach = 0; }
-    else if (pace > 0) { monthsToReach = remain / pace; reachDate = new Date(asOf.getTime() + monthsToReach * MONTH_DAYS * DAY); }
+    else {
+      let t = asOf.getTime(), amt = cur;
+      const perDay = varPace / MONTH_DAYS;
+      const events = planLeft.map(ym => monthEndOf(ym).getTime()).filter(e => e >= t);
+      const limit = asOf.getTime() + 60 * MONTH_DAYS * DAY;
+      for (const e of [...events, limit]) {
+        const days = (e - t) / DAY;
+        if (perDay > 0 && amt + perDay * days >= target) { reachDate = new Date(t + ((target - amt) / perDay) * DAY); break; }
+        amt += perDay * days; t = e;
+        if (e !== limit) { amt += fixedMonthly; if (amt >= target) { reachDate = new Date(e); break; } }
+      }
+      if (reachDate) monthsToReach = monthsBetween(asOf, reachDate);
+    }
 
-    // 前回記録からの増加
     let lastDiff = null;
-    if (state.snaps.length >= 2) { const a = state.snaps[state.snaps.length - 2], b = latest; lastDiff = b.cumulative - a.cumulative; }
+    if (state.snaps.length >= 2) lastDiff = latest.cumulative - state.snaps[state.snaps.length - 2].cumulative;
 
+    const goalName = `${goal.getMonth() + 1}月末`;
     let status;
     if (cur >= target) status = { key: 'done', label: '達成', cls: 'green' };
-    else if (reachDate && reachDate <= end) status = { key: 'ontrack', label: '期間内に届く見込み', cls: 'green' };
-    else if (landing >= target * 0.9) status = { key: 'close', label: 'あと少し', cls: 'amber' };
+    else if (reachDate && reachDate <= goal) status = { key: 'ontrack', label: `${goalName}までに届く見込み`, cls: 'green' };
+    else if (reachDate && reachDate <= end) status = { key: 'late', label: `${goalName}は過ぎる見込み`, cls: 'amber' };
+    else if (landingEnd >= target * 0.9) status = { key: 'close', label: 'あと少し', cls: 'amber' };
     else status = { key: 'behind', label: '届かない見込み', cls: 'gray' };
 
-    const beforeStart = asOf < start && !latest;
-    return { target, start, end, totalMonths, cur, asOf, elapsed, remainMonths, remain, pace, paceSrc, needMonthly, landing, reachDate, monthsToReach, lastDiff, status, latest, beforeStart };
+    const beforeStart = !latest && today < start;
+    return { target, start, end, goal, goalName, cur, asOf, elapsed, remainMonths, remainToEnd, remain, pace, paceSrc, varPace, needMonthly, needVar, needVarMonthly, landing, landingEnd, reachDate, monthsToReach, lastDiff, status, latest, beforeStart, plan, planLeft, fixedMonthly, fixedRemaining, secured };
   }
 
-  // ---------- リマインド ----------
+  // ---------- リマインド（今年分のみ） ----------
   function reminder() {
-    const t = new Date();
+    if (!isCurrentSheet()) return '';
+    const s = state.settings, t = new Date(), ti = todayISO();
+    if (ti < s.period_start) return '';
     const latest = state.snaps[state.snaps.length - 1];
     const prevMonthEnd = new Date(t.getFullYear(), t.getMonth(), 0);
-    const curYM = `${t.getFullYear()}-${pad(t.getMonth() + 1)}`;
-    const prevYM = toISO(prevMonthEnd).slice(0, 7);
+    const curYM = ti.slice(0, 7), prevYM = toISO(prevMonthEnd).slice(0, 7);
     const lastYM = latest ? latest.date.slice(0, 7) : null;
     if (t.getDate() >= 25 && lastYM !== curYM) return `${t.getMonth() + 1}月末の記録の時期です。利用実績照会の累計を入れましょう`;
-    if (t.getDate() <= 10 && (!lastYM || lastYM < prevYM)) return `${prevMonthEnd.getMonth() + 1}月末の記録がまだです`;
+    if (t.getDate() <= 10 && toISO(prevMonthEnd) >= s.period_start && (!lastYM || lastYM < prevYM)) return `${prevMonthEnd.getMonth() + 1}月末の記録がまだです`;
     return '';
   }
 
@@ -282,43 +425,42 @@
     const W = 340, H = 190, L = 34, R = 10, T = 12, B = 26;
     const pw = W - L - R, ph = H - T - B;
     const t0 = f.start.getTime(), t1 = f.end.getTime();
-    const yMax = Math.max(f.target * 1.08, f.landing, ...state.snaps.map(s => s.cumulative)) || f.target;
+    const yMax = Math.max(f.target * 1.08, f.landingEnd, ...state.snaps.map(s => s.cumulative)) || f.target;
     const x = (ms) => L + Math.max(0, Math.min(1, (ms - t0) / (t1 - t0))) * pw;
     const y = (v) => T + ph - (v / yMax) * ph;
-
     let g = '';
-    // y軸目盛（100万ごと）
     for (let v = 0; v <= yMax; v += 1000000) {
       g += `<line x1="${L}" x2="${W - R}" y1="${y(v)}" y2="${y(v)}" stroke="rgba(60,60,67,.10)" stroke-width="1"/>`;
       g += `<text x="${L - 6}" y="${y(v) + 3.5}" font-size="9.5" text-anchor="end" fill="rgba(60,60,67,.55)">${v / 10000}万</text>`;
     }
-    // x軸ラベル（開始・中間・終了）
     const mid = new Date((t0 + t1) / 2);
     [[f.start, 'start'], [mid, 'middle'], [f.end, 'end']].forEach(([d, a]) => {
       g += `<text x="${x(d.getTime())}" y="${H - 8}" font-size="9.5" text-anchor="${a}" fill="rgba(60,60,67,.55)">${d.getFullYear() % 100}/${d.getMonth() + 1}</text>`;
     });
-    // 目標ライン
     g += `<line x1="${L}" x2="${W - R}" y1="${y(f.target)}" y2="${y(f.target)}" stroke="#F59E0B" stroke-width="1.5" stroke-dasharray="5 4"/>`;
-    g += `<text x="${W - R}" y="${y(f.target) - 5}" font-size="10" font-weight="700" text-anchor="end" fill="#B26A00">${f.target / 10000}万</text>`;
-    // 実績
+    g += `<text x="${L + 4}" y="${y(f.target) - 5}" font-size="10" font-weight="700" fill="#B26A00">${f.target / 10000}万</text>`;
     const pts = [[t0, 0], ...state.snaps.filter(s => fromISO(s.date).getTime() >= t0).map(s => [fromISO(s.date).getTime(), s.cumulative])];
     if (pts.length >= 2) {
       const d = pts.map((p, i) => `${i ? 'L' : 'M'}${x(p[0]).toFixed(1)},${y(p[1]).toFixed(1)}`).join(' ');
-      const area = d + ` L${x(pts[pts.length - 1][0]).toFixed(1)},${y(0)} L${x(t0)},${y(0)} Z`;
-      g += `<path d="${area}" fill="rgba(11,48,142,.08)"/>`;
+      g += `<path d="${d} L${x(pts[pts.length - 1][0]).toFixed(1)},${y(0)} L${x(t0)},${y(0)} Z" fill="rgba(11,48,142,.08)"/>`;
       g += `<path d="${d}" fill="none" stroke="#0B308E" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>`;
     }
-    // 見込み（最新→期間末）
-    const lastP = pts[pts.length - 1];
-    if (f.remainMonths > 0) {
-      g += `<line x1="${x(lastP[0])}" y1="${y(lastP[1])}" x2="${x(t1)}" y2="${y(f.landing)}" stroke="#00AFF0" stroke-width="2" stroke-dasharray="4 4"/>`;
-      g += `<circle cx="${x(t1)}" cy="${y(f.landing)}" r="3.5" fill="#fff" stroke="#00AFF0" stroke-width="2"/>`;
+    const tg = f.goal.getTime(), lastP = pts[pts.length - 1];
+    if (tg < t1) {
+      g += `<line x1="${x(tg)}" x2="${x(tg)}" y1="${T}" y2="${T + ph}" stroke="#00AFF0" stroke-width="1.5" stroke-dasharray="3 3"/>`;
+      g += `<text x="${x(tg) - 4}" y="${T + 10}" font-size="10" font-weight="700" text-anchor="end" fill="#0678A8">${f.goalName}</text>`;
     }
+    // 予定分だけで積み上がる線（確定ライン）
+    if (f.fixedMonthly > 0 && f.planLeft.length) {
+      let amt = lastP[1], d = `M${x(lastP[0]).toFixed(1)},${y(amt).toFixed(1)}`;
+      for (const ym of f.planLeft) { amt += f.fixedMonthly; d += ` L${x(monthEndOf(ym).getTime()).toFixed(1)},${y(amt).toFixed(1)}`; }
+      g += `<path d="${d}" fill="none" stroke="rgba(11,48,142,.45)" stroke-width="1.6" stroke-dasharray="2 3"/>`;
+    }
+    if (f.remainToEnd > 0) g += `<line x1="${x(lastP[0])}" y1="${y(lastP[1])}" x2="${x(t1)}" y2="${y(f.landingEnd)}" stroke="#00AFF0" stroke-width="2" stroke-dasharray="4 4"/>`;
+    if (f.remainMonths > 0) g += `<circle cx="${x(tg)}" cy="${y(f.landing)}" r="4" fill="#fff" stroke="#00AFF0" stroke-width="2.2"/>`;
     pts.slice(1).forEach(p => { g += `<circle cx="${x(p[0])}" cy="${y(p[1])}" r="3.5" fill="#0B308E" stroke="#fff" stroke-width="1.5"/>`; });
-    // 今日
-    const today = Date.now();
-    if (today > t0 && today < t1) g += `<line x1="${x(today)}" x2="${x(today)}" y1="${T}" y2="${T + ph}" stroke="rgba(60,60,67,.25)" stroke-width="1"/>`;
-
+    const tn = Date.now();
+    if (tn > t0 && tn < t1) g += `<line x1="${x(tn)}" x2="${x(tn)}" y1="${T}" y2="${T + ph}" stroke="rgba(60,60,67,.25)" stroke-width="1"/>`;
     return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="累計利用額の推移">${g}</svg>`;
   }
 
@@ -326,102 +468,194 @@
   function renderHome() {
     const f = forecast();
     const pct = Math.min(100, f.cur / f.target * 100);
-    $('#homeLead').textContent = f.beforeStart ? `${f.start.getMonth() + 1}/${f.start.getDate()}開始` : `残り${Math.round(f.remainMonths)}か月`;
+    const securedPct = Math.min(100, f.secured / f.target * 100);
+    $('#homeLead').textContent = f.beforeStart ? `${f.start.getMonth() + 1}/${f.start.getDate()}開始` : (f.remainMonths > 0 ? `${f.goalName}まで${Math.round(f.remainMonths)}か月` : '');
     const rem = reminder();
 
-    // 試算カード
     let fcValue, fcDesc;
-    if (f.status.key === 'done') {
-      fcValue = '達成済み';
-      fcDesc = `${mdLabel(f.latest.date)}時点で ${man(f.cur)}円。おつかれさまでした。`;
-    } else if (!f.reachDate) {
-      fcValue = '—';
-      fcDesc = 'ペースが出せません。設定の想定月平均を入れてください。';
-    } else {
+    if (f.status.key === 'done') { fcValue = '達成済み'; fcDesc = `${mdLabel(f.latest.date)}時点で ${man(f.cur)}円。おつかれさまでした。`; }
+    else if (!f.reachDate) { fcValue = '—'; fcDesc = 'ペースが出せません。予定を入れるか、設定の想定月平均を入れてください。'; }
+    else {
       fcValue = `${ymLabel(f.reachDate)}ごろ`;
-      const inTime = f.reachDate <= f.end;
-      fcDesc = `このペース（月${man(f.pace)}円${f.paceSrc === 'assumed' ? '・想定値' : ''}）なら、あと約${Math.ceil(f.monthsToReach)}か月で300万円に届く見込みです。` +
-        (inTime ? `\n判定期間の終わり（${mdLabel(state.settings.period_end)}）まで余裕があります。`
-                : `\n判定期間の終わり（${mdLabel(state.settings.period_end)}）には約${man(f.target - f.landing)}円足りない見込みです。`);
+      const mo = Math.max(1, Math.ceil(f.monthsToReach));
+      const paceTxt = f.fixedMonthly > 0
+        ? `予定分（月${man(f.fixedMonthly)}円）＋予定外（月${man(f.varPace)}円${f.paceSrc === 'assumed' ? '・想定' : ''}）のペースで、${f.beforeStart ? '期間開始から' : 'あと'}約${mo}か月で300万円に届く見込みです。`
+        : `このペース（月${man(f.pace)}円${f.paceSrc === 'assumed' ? '・想定値' : ''}）なら、${f.beforeStart ? '期間開始から' : 'あと'}約${mo}か月で300万円に届く見込みです。`;
+      if (f.reachDate <= f.goal) fcDesc = paceTxt + `\n目標の${f.goalName}より約${Math.round((f.goal - f.reachDate) / DAY)}日早く、余裕をもって達成できます。`;
+      else if (f.reachDate <= f.end) fcDesc = paceTxt + `\n判定期間内には届きますが、${f.goalName}時点では約${man(f.target - f.landing)}円足りない見込み。期限ギリギリです。`;
+      else fcDesc = paceTxt + `\n${f.goalName}時点では約${man(f.target - f.landing)}円、判定期間末でも約${man(f.target - f.landingEnd)}円足りない見込みです。`;
     }
 
-    // 必要ペースとの比較メッセージ
     let msgCls = 'calm', msg = '';
     if (f.status.key === 'done') { msgCls = 'good'; msg = '目標に届きました。ここから先は無理に寄せる必要はありません。'; }
-    else if (f.remainMonths <= 0) { msg = '判定期間が終わっています。設定で次の期間に切り替えられます。'; }
-    else {
+    else if (f.remainMonths <= 0) {
+      msg = f.remainToEnd > 0 ? `${f.goalName}の目標期限を過ぎました。判定期間末（${mdLabel(state.settings.period_end)}）まではあと${man(f.remain)}円です。` : '判定期間が終わりました。まもなくアーカイブに移ります。';
+    } else if (f.fixedMonthly > 0) {
+      if (f.secured >= f.target) { msgCls = 'good'; msg = `予定分だけで${f.goalName}に${man(f.secured)}円に届きます。\nそれ以外の支出は、無理に寄せなくても大丈夫です。`; }
+      else {
+        const gap = f.varPace - f.needVarMonthly;
+        if (gap >= 0) { msgCls = 'good'; msg = `予定分のほかに月${man(f.needVarMonthly)}円使えば${f.goalName}に届きます。\n予定外のペース（月${man(f.varPace)}円）で足りていて、安心圏です。`; }
+        else { msgCls = 'warn'; msg = `予定分のほかに月${man(f.needVarMonthly)}円が必要です。\n予定外のペース（月${man(f.varPace)}円）より月${man(-gap)}円多い計算。必要な支出の寄せ替えで埋まるかを目安に。`; }
+      }
+    } else {
       const gap = f.pace - f.needMonthly;
-      if (gap >= 0) { msgCls = 'good'; msg = `期間内に届くには月${man(f.needMonthly)}円ペースが必要。\n今のペースはそれを月${man(gap)}円上回っています。`; }
-      else { msgCls = 'warn'; msg = `期間内に届くには月${man(f.needMonthly)}円ペースが必要。\n今のペースより月${man(-gap)}円多く使う計算です。必要な支出の寄せ替えで埋まるかを目安に。`; }
+      if (gap >= 0) { msgCls = 'good'; msg = `${f.goalName}までに届くには月${man(f.needMonthly)}円ペースが必要。\n今のペースはそれを月${man(gap)}円上回っていて、安心圏です。`; }
+      else { msgCls = 'warn'; msg = `${f.goalName}までに届くには月${man(f.needMonthly)}円ペースが必要。\n今のペースより月${man(-gap)}円多く使う計算です。必要な支出の寄せ替えで埋まるかを目安に。`; }
     }
 
+    const pl = f.plan;
+    const planRange = pl.length ? `${ymShort(pl[0])}〜${ymShort(pl[pl.length - 1])}の${pl.length}か月` : '';
+    const planCard = f.fixedMonthly > 0 ? `
+      <div class="sec-label">確実に払う分（予定）</div>
+      <div class="card tap" id="goPlan">
+        <div class="sumline"><div class="l">月${man(f.fixedMonthly)}円 × 残り${f.planLeft.length}か月</div><div class="r">+${man(f.fixedRemaining)}円</div></div>
+        <div class="hr"></div>
+        <div class="sumline"><div class="l">${f.goalName}の確定ライン<br><span style="font-size:11px; color:var(--tertiary);">累計＋予定分</span></div><div class="r" style="color:var(--ink); font-size:24px;">${man(f.secured)}<small style="font-size:13px;">円</small></div></div>
+        <div style="font-size:13px; margin-top:8px; font-weight:600; color:${f.secured >= f.target ? 'var(--green)' : '#B26A00'};">
+          ${f.secured >= f.target ? `予定分だけで300万円に届きます（${signMan(f.secured - f.target)}円）` : `300万円まで あと${man(f.needVar)}円を予定外の支出で`}</div>
+        <div style="font-size:11px; color:var(--tertiary); margin-top:6px;">計上期間：${planRange}（記録済みの月は累計に含まれるので除外）</div>
+      </div>` : `
+      <div class="msg calm tap" id="goPlan"><span style="flex:1;">「予定」タブで毎月確実に払う分を入れると、${f.goalName}の確定ラインが出ます</span><span class="chev">›</span></div>`;
+
+    const openTasks = state.tasks.filter(t => !t.done);
+    const taskCard = state.tasks.length ? `
+      <div class="sec-label">やること</div>
+      <div class="list tap" id="goTasks">${openTasks.slice(0, 3).map(t => `<div class="row" style="cursor:pointer;"><span class="ck"></span><div class="main"><div class="ttl" style="font-weight:500; font-size:14.5px;">${esc(t.text)}</div></div></div>`).join('') || `<div class="row"><div class="main"><div class="ttl" style="font-weight:500; font-size:14px; color:var(--green);">すべて完了しました</div></div></div>`}
+        ${openTasks.length > 3 ? `<div class="row"><div class="main"><div class="meta" style="margin:0;">ほか${openTasks.length - 3}件</div></div><span class="chev">›</span></div>` : ''}</div>` : '';
+
     $('#homeScroll').innerHTML = `
+      ${sheetBarHTML()}
       ${rem ? `<div class="msg calm tap" id="remTap"><span style="flex:1;">${esc(rem)}</span><span class="chev">›</span></div>` : ''}
       <div class="hero">
-        <div class="lbl">${f.latest ? `${mdLabel(f.latest.date)} 時点の累計利用額` : 'まだ記録がありません'}</div>
+        <div class="lbl">${sheetName(state.settings)}　${f.latest ? `${mdLabel(f.latest.date)} 時点の累計利用額` : (f.beforeStart ? `${mdLabel(state.settings.period_start)}から開始` : 'まだ記録がありません')}</div>
         <div class="big">${man(f.cur)}<small>円</small></div>
         <div class="sub">あと <b>${man(f.remain)}円</b> で${man(f.target)}円</div>
-        <div class="gauge"><i style="width:${pct}%"></i></div>
-        <div class="hero-row"><span>達成率 ${Math.floor(pct)}%</span><span>${f.lastDiff != null ? `前回比 ${signMan(f.lastDiff)}円` : ''}</span></div>
+        <div class="gauge">${f.fixedMonthly > 0 ? `<b style="width:${securedPct}%"></b>` : ''}<i style="width:${pct}%"></i></div>
+        <div class="hero-row"><span>達成率 ${Math.floor(pct)}%${f.fixedMonthly > 0 ? `　予定込み ${Math.floor(securedPct)}%` : ''}</span><span>${f.lastDiff != null ? `前回比 ${signMan(f.lastDiff)}円` : ''}</span></div>
       </div>
 
       <div class="forecast">
-        <div style="display:flex; justify-content:space-between; align-items:center;">
-          <div class="k">300万円に届くのは</div><span class="pill ${f.status.cls}">${f.status.label}</span>
-        </div>
+        <div style="display:flex; justify-content:space-between; align-items:center; gap:8px;"><div class="k">300万円に届くのは</div><span class="pill ${f.status.cls}">${f.status.label}</span></div>
         <div class="v">${fcValue}</div>
-        <div class="d" style="white-space:pre-wrap;">${fcDesc}</div>
+        <div class="d">${fcDesc}</div>
       </div>
+
+      ${planCard}
+
+      ${taskCard}
 
       <div class="grid2">
         <div class="stat"><div class="k">実績ペース（月平均）</div><div class="v">${f.paceSrc === 'actual' ? man(f.pace) : '—'}<small>${f.paceSrc === 'actual' ? '円' : ''}</small></div></div>
-        <div class="stat"><div class="k">必要ペース（残り${Math.round(f.remainMonths)}か月）</div><div class="v">${man(f.needMonthly)}<small>円</small></div></div>
-        <div class="stat"><div class="k">期間末の着地見込み</div><div class="v">${man(f.landing)}<small>円</small></div></div>
-        <div class="stat"><div class="k">期間末までの過不足</div><div class="v" style="color:${f.landing >= f.target ? 'var(--green)' : '#B26A00'}">${signMan(f.landing - f.target)}<small>円</small></div></div>
+        ${f.fixedMonthly > 0
+          ? `<div class="stat"><div class="k">予定外に必要（月）</div><div class="v">${man(f.needVarMonthly)}<small>円</small></div></div>`
+          : `<div class="stat"><div class="k">必要ペース（${f.goalName}まで）</div><div class="v">${man(f.needMonthly)}<small>円</small></div></div>`}
+        <div class="stat"><div class="k">${f.goalName}の着地見込み</div><div class="v">${man(f.landing)}<small>円</small></div></div>
+        <div class="stat"><div class="k">${f.goalName}時点の過不足</div><div class="v" style="color:${f.landing >= f.target ? 'var(--green)' : '#B26A00'}">${signMan(f.landing - f.target)}<small>円</small></div></div>
       </div>
 
       <div class="msg ${msgCls}">${msg}</div>
 
       <div class="sec-label">推移</div>
       <div class="chart">${chartSVG(f)}
-        <div class="legend"><span><i style="border-color:#0B308E"></i>実績</span><span><i style="border-color:#00AFF0; border-top-style:dashed"></i>見込み</span><span><i style="border-color:#F59E0B; border-top-style:dashed"></i>目標</span></div>
+        <div class="legend"><span><i style="border-color:#0B308E"></i>実績</span>${f.fixedMonthly > 0 ? `<span><i style="border-color:rgba(11,48,142,.45); border-top-style:dotted"></i>予定分のみ</span>` : ''}<span><i style="border-color:#00AFF0; border-top-style:dashed"></i>見込み</span><span><i style="border-color:#F59E0B; border-top-style:dashed"></i>目標額</span></div>
       </div>
 
-      ${!f.latest ? `<button class="btn primary" id="firstAdd">最初の記録を入れる</button>` : ''}
+      ${!f.latest && !f.beforeStart ? `<button class="btn primary" id="firstAdd">最初の記録を入れる</button>` : ''}
       <div style="font-size:11px; color:var(--tertiary); line-height:1.6; margin:0 2px;">
-        判定期間 ${mdLabel(state.settings.period_start)}〜${mdLabel(state.settings.period_end)}。ペースは期間開始からの平均${f.paceSrc === 'assumed' ? '（記録が1か月分たまるまでは設定の想定値）' : ''}。金額はANAの利用実績照会の累計をそのまま入れる前提の見込みです。
+        目標期限 ${mdLabel(toISO(f.goal))}（判定期間 ${mdLabel(state.settings.period_start)}〜${mdLabel(state.settings.period_end)}）。ペースは期間開始からの平均${f.paceSrc === 'assumed' ? '（記録が1か月分たまるまでは設定の想定値）' : ''}。金額はANAの利用実績照会の累計を入れる前提の見込みです。
       </div>
     `;
+    bindSheetBar($('#homeScroll'), renderHome);
     const ra = $('#remTap'); if (ra) ra.onclick = () => openSnapSheet(null);
     const fa = $('#firstAdd'); if (fa) fa.onclick = () => openSnapSheet(null);
+    const gp = $('#goPlan'); if (gp) gp.onclick = () => switchView('plan');
+    const gt = $('#goTasks'); if (gt) gt.onclick = () => switchView('tasks');
+  }
+
+  // ===================== やること（シートごとの簡単なタスクリスト） =====================
+  let showDone = false;
+  function renderTasks() {
+    const open = state.tasks.filter(t => !t.done);
+    const done = state.tasks.filter(t => t.done).sort((a, b) => (b.doneAt || 0) - (a.doneAt || 0));
+    const row = (t) => `<div class="row ${t.done ? 'done' : ''}" data-id="${t.id}">
+      <button class="ck ${t.done ? 'on' : ''}" data-toggle="${t.id}" aria-label="完了">${t.done ? '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12l5 5L20 6"/></svg>' : ''}</button>
+      <div class="main"><div class="ttl" style="font-size:15px;">${esc(t.text)}</div>${t.note ? `<div class="meta">${esc(t.note)}</div>` : ''}</div>
+      <span class="chev">›</span></div>`;
+    $('#tasksScroll').innerHTML = `${sheetBarHTML()}
+      <div class="task-add"><input type="text" id="taskNew" placeholder="例）通信費をANAカード払いに切替" enterkeyhint="done"><button id="taskAddBtn">追加</button></div>
+      ${open.length ? `<div class="list">${open.map(row).join('')}</div>` : `<div class="empty" style="padding:22px 16px;">${state.tasks.length ? '残っているやることはありません' : `${sheetName(state.settings)}に向けたやることを<br>上の欄からさっと追加できます。`}</div>`}
+      ${done.length ? `<div style="display:flex; justify-content:space-between; align-items:center; margin:4px 2px 8px;">
+        <button class="link-btn" id="toggleDone">${showDone ? '完了を隠す' : `完了 ${done.length}件を表示`}</button>
+        ${showDone ? '<button class="link-btn" id="clearDone" style="color:#B26A00;">完了を消す</button>' : ''}</div>
+        ${showDone ? `<div class="list">${done.map(row).join('')}</div>` : ''}` : ''}`;
+    bindSheetBar($('#tasksScroll'), renderTasks);
+    const inp = $('#taskNew');
+    const add = async () => {
+      const text = inp.value.trim(); if (!text) return;
+      const minOrder = state.tasks.reduce((m, t) => Math.min(m, t.order ?? 0), 0);
+      await put('tasks', { id: uid(), sheetId: state.settings.id, text, note: '', done: false, order: minOrder - 1, updatedAt: now() });
+      await loadAll(); renderTasks(); $('#taskNew').focus();
+    };
+    $('#taskAddBtn').onclick = add;
+    inp.onkeydown = (e) => { if (e.key === 'Enter' && !e.isComposing) { e.preventDefault(); add(); } };
+    $$('#tasksScroll [data-toggle]').forEach(b => b.onclick = async (e) => {
+      e.stopPropagation();
+      const t = state.tasks.find(x => x.id === b.dataset.toggle);
+      await put('tasks', { ...t, done: !t.done, doneAt: !t.done ? now() : null, updatedAt: now() });
+      await loadAll(); renderTasks();
+    });
+    $$('#tasksScroll .row').forEach(el => el.onclick = () => openTaskSheet(el.dataset.id));
+    const td = $('#toggleDone'); if (td) td.onclick = () => { showDone = !showDone; renderTasks(); };
+    const cd = $('#clearDone'); if (cd) cd.onclick = async () => {
+      if (!confirm(`完了した${done.length}件を消しますか？`)) return;
+      for (const t of done) await del('tasks', t.id);
+      await loadAll(); renderTasks(); toast('消しました');
+    };
+  }
+  function openTaskSheet(id) {
+    const t = state.tasks.find(x => x.id === id); if (!t) return;
+    openSheet('やることを編集', `
+      <div class="field"><label>内容</label><input type="text" id="tt" value="${esc(t.text)}"></div>
+      <div class="field"><label>メモ（任意）</label><input type="text" id="tn" value="${esc(t.note || '')}" placeholder="期限・手順など"></div>
+      <button class="del-btn" id="taskDel">このやることを削除</button>
+    `, async () => {
+      const text = $('#tt').value.trim(); if (!text) { toast('内容を入れてください'); return false; }
+      await put('tasks', { ...t, text, note: $('#tn').value.trim(), updatedAt: now() });
+      await loadAll(); renderTasks();
+    });
+    $('#taskDel').onclick = async () => { closeSheet(); await del('tasks', id); await loadAll(); renderTasks(); toast('削除しました'); };
   }
 
   // ===================== 記録 =====================
   function renderLog() {
+    const bar = sheetBarHTML();
     if (!state.snaps.length) {
-      $('#logScroll').innerHTML = `<div class="empty">まだ記録がありません。<br>毎月末に、ANAの利用実績照会で見られる<br>「判定期間の累計利用額」を1つ入れるだけです。</div><button class="btn primary" id="logFirst">記録する</button>`;
-      $('#logFirst').onclick = () => openSnapSheet(null);
+      const before = todayISO() < state.settings.period_start;
+      $('#logScroll').innerHTML = `${bar}<div class="empty">${sheetName(state.settings)}の記録はまだありません。<br>${before ? `判定期間は ${mdLabel(state.settings.period_start)} から。始まったら毎月末に<br>` : '毎月末に、'}ANAの利用実績照会の「累計利用額」を1つ入れるだけです。</div>${before ? '' : '<button class="btn primary" id="logFirst">記録する</button>'}`;
+      bindSheetBar($('#logScroll'), renderLog);
+      const lf = $('#logFirst'); if (lf) lf.onclick = () => openSnapSheet(null);
       return;
     }
     const rows = [...state.snaps].reverse().map((s, i, arr) => {
       const prev = arr[i + 1];
       const diff = prev ? s.cumulative - prev.cumulative : null;
       return `<div class="row" data-id="${s.id}">
-        <div class="main"><div class="ttl">${mdLabel(s.date)}</div><div class="meta">${s.note ? esc(s.note) : (diff != null ? `前回から${Math.round(monthsBetween(fromISO(prev.date), fromISO(s.date)) * 10) / 10}か月` : '最初の記録')}</div></div>
+        <div class="main"><div class="ttl">${mdLabel(s.date)}</div><div class="meta">${s.note ? esc(s.note) : (prev ? `前回から${Math.round(monthsBetween(fromISO(prev.date), fromISO(s.date)) * 10) / 10}か月` : '最初の記録')}</div></div>
         <div class="amt">${man(s.cumulative)}円${diff != null ? `<small style="${diff < 0 ? 'color:#B26A00' : ''}">${signMan(diff)}円</small>` : ''}</div>
-        <span class="chev">›</span>
-      </div>`;
+        <span class="chev">›</span></div>`;
     }).join('');
-    $('#logScroll').innerHTML = `<div class="sec-label">月末時点の累計利用額</div><div class="list">${rows}</div>
+    $('#logScroll').innerHTML = `${bar}<div class="sec-label">${sheetName(state.settings)}：月末時点の累計利用額</div><div class="list">${rows}</div>
       <div style="font-size:11.5px; color:var(--tertiary); margin:0 2px; line-height:1.6;">緑の数字は前回からの増加分（その間に使った額）です。</div>`;
+    bindSheetBar($('#logScroll'), renderLog);
     $$('#logScroll .row').forEach(el => el.onclick = () => openSnapSheet(el.dataset.id));
   }
 
   function openSnapSheet(id) {
+    const sh = state.settings;
     const s = id ? state.snaps.find(x => x.id === id) : { id: uid(), date: defaultSnapDate(), cumulative: null, note: '' };
     const before = state.snaps.filter(x => x.id !== s.id && x.date < s.date).pop();
-    openSheet(id ? '記録を編集' : '月末の記録', `
-      <div class="field"><label>記録日</label><input type="date" id="sd" value="${s.date}"></div>
+    openSheet(id ? '記録を編集' : `月末の記録（${sheetName(sh)}）`, `
+      <div class="field"><label>記録日</label><input type="date" id="sd" value="${s.date}" min="${sh.period_start}" max="${sh.period_end}"></div>
       <div class="field"><label>判定期間の累計利用額</label>
         <div class="inwrap"><input type="number" class="big" inputmode="decimal" step="0.1" id="sc" value="${s.cumulative != null ? yenToMan(s.cumulative) : ''}" placeholder="0"><span class="unit">万円</span></div>
         <div class="prev-note" id="scNote">${before ? `前回（${mdLabel(before.date)}）は ${man(before.cumulative)}円` : 'ANAの利用実績照会に出ている累計をそのまま入力'}</div>
@@ -431,74 +665,160 @@
     `, async () => {
       const raw = $('#sc').value.trim();
       if (raw === '') { toast('累計利用額を入れてください'); return false; }
-      const date = $('#sd').value || defaultSnapDate();
-      // 同じ月の記録があれば上書き（月1件）
+      let date = $('#sd').value || defaultSnapDate();
+      if (date < sh.period_start || date > sh.period_end) { toast('このシートの判定期間内の日付にしてください'); return false; }
       const sameMonth = state.snaps.find(x => x.id !== s.id && x.date.slice(0, 7) === date.slice(0, 7));
-      const rec = { id: sameMonth && !id ? sameMonth.id : s.id, date, cumulative: manToYen(raw), note: $('#sn').value.trim(), updatedAt: now() };
-      await put('snapshots', rec);
-      await loadAll(); renderAll(); toast(sameMonth && !id ? '同じ月の記録を更新しました' : '記録しました');
+      const rec = { id: sameMonth && !id ? sameMonth.id : s.id, sheetId: sh.id, date, cumulative: manToYen(raw), note: $('#sn').value.trim(), updatedAt: now() };
+      await put('snapshots', rec); await loadAll(); renderAll(); toast(sameMonth && !id ? '同じ月の記録を更新しました' : '記録しました');
     });
     const inp = $('#sc');
-    if (before) inp.oninput = () => {
-      const d = manToYen(inp.value) - before.cumulative;
-      $('#scNote').innerHTML = `前回（${mdLabel(before.date)}）は ${man(before.cumulative)}円 → 今回 <b>${signMan(d)}円</b>`;
-    };
+    if (before) inp.oninput = () => { const d = manToYen(inp.value) - before.cumulative; $('#scNote').innerHTML = `前回（${mdLabel(before.date)}）は ${man(before.cumulative)}円 → 今回 <b>${signMan(d)}円</b>`; };
     const db = $('#snapDel');
     if (db) db.onclick = async () => { if (!confirm('この記録を削除しますか？')) return; closeSheet(); await del('snapshots', id); await loadAll(); renderAll(); toast('削除しました'); };
     if (!id) setTimeout(() => inp.focus(), 350);
   }
 
+  // ===================== 予定（毎月確実に払う分） =====================
+  function renderPlan() {
+    const bar = sheetBarHTML();
+    const pl = planMonths();
+    const total = fixedMonthlyTotal();
+    const range = pl.length ? `${ymShort(pl[0])}〜${ymShort(pl[pl.length - 1])}` : '—';
+    const latest = state.snaps[state.snaps.length - 1];
+    const lastYM = latest ? latest.date.slice(0, 7) : state.settings.period_start.slice(0, 7);
+    const left = pl.filter(ym => ym > lastYM).length;
+    const summary = `
+      <div class="card">
+        <div class="sumline"><div class="l">毎月の予定 合計</div><div class="r">${man(total)}<small style="font-size:13px;">円</small></div></div>
+        <div class="hr"></div>
+        <div class="sumline"><div class="l">× 計上 ${pl.length}か月（${range}）</div><div class="r" style="color:var(--ink);">${man(total * pl.length)}<small style="font-size:13px;">円</small></div></div>
+        <div style="font-size:12px; color:var(--secondary); margin-top:8px; line-height:1.6;">うち未記録の残り${left}か月ぶん <b style="color:var(--navy);">${man(total * left)}円</b> を試算に足します。<br><span style="color:var(--tertiary);">判定期間末より早めに仕切るため、目標期限の月（${state.settings.goal_deadline ? ymShort(state.settings.goal_deadline.slice(0, 7)) : ''}）までで計上します。</span></div>
+      </div>`;
+    const prevSheet = (() => { const i = state.sheets.findIndex(x => x.id === state.settings.id); return i > 0 ? state.sheets[i - 1] : null; })();
+    const prevFixed = prevSheet ? state.allFixed.filter(x => x.sheetId === prevSheet.id) : [];
+    const copyBtn = !state.fixed.length && prevFixed.length ? `<button class="btn ghost" id="copyPrev" style="margin-bottom:12px;">${sheetName(prevSheet)}の予定をコピー（${prevFixed.length}件・月${man(fixedMonthlyTotal(prevFixed))}円）</button>` : '';
+    const rows = state.fixed.map(x => `
+      <div class="row" data-id="${x.id}"><div class="main"><div class="ttl">${esc(x.name)}</div>${x.note ? `<div class="meta">${esc(x.note)}</div>` : ''}</div>
+      <div class="amt">月${man(x.monthly)}円</div><span class="chev">›</span></div>`).join('');
+    $('#planScroll').innerHTML = `${bar}${summary}
+      <div class="sec-label">${sheetName(state.settings)}：毎月確実に払う分</div>
+      ${state.fixed.length ? `<div class="list">${rows}</div>` : `<div class="empty" style="padding:20px 16px;">家賃・通信費・光熱費・保険・サブスクなど、<br>ANAカード／ANA Payで毎月必ず払う分を入れます。</div>`}
+      ${copyBtn}
+      <button class="add-btn" id="planAdd2">＋ 予定を追加</button>`;
+    bindSheetBar($('#planScroll'), renderPlan);
+    $$('#planScroll .row').forEach(el => el.onclick = () => openFixedSheet(el.dataset.id));
+    $('#planAdd2').onclick = () => openFixedSheet(null);
+    const cp = $('#copyPrev');
+    if (cp) cp.onclick = async () => {
+      let o = 0; for (const x of prevFixed) await put('fixed', { id: uid(), sheetId: state.settings.id, name: x.name, monthly: x.monthly, note: x.note || '', order: o++, updatedAt: now() });
+      await loadAll(); renderPlan(); renderHome(); toast('コピーしました');
+    };
+  }
+  function openFixedSheet(id) {
+    const x = id ? state.fixed.find(f => f.id === id) : { id: uid(), name: '', monthly: 0, note: '', order: state.fixed.length };
+    openSheet(id ? '予定を編集' : '予定を追加', `
+      <div class="field"><label>支払い名</label><input type="text" id="fn" value="${esc(x.name)}" placeholder="家賃 / 通信費 / 光熱費 など"></div>
+      <div class="field"><label>毎月の金額</label><div class="inwrap"><input type="number" class="big" inputmode="decimal" step="0.1" id="fm" value="${x.monthly ? yenToMan(x.monthly) : ''}" placeholder="0"><span class="unit">万円</span></div>
+        <div class="hint">ANAカード／ANA Payで払い、対象になる分だけ。</div></div>
+      <div class="field"><label>メモ（任意）</label><input type="text" id="fo" value="${esc(x.note || '')}" placeholder="引き落とし日・支払い方法など"></div>
+      ${id ? `<button class="del-btn" id="fixDel">この予定を削除</button>` : ''}
+    `, async () => {
+      const name = $('#fn').value.trim(), monthly = manToYen($('#fm').value);
+      if (!name || !monthly) { toast('支払い名と金額を入れてください'); return false; }
+      await put('fixed', { id: x.id, sheetId: state.settings.id, name, monthly, note: $('#fo').value.trim(), order: x.order ?? state.fixed.length, updatedAt: now() });
+      await loadAll(); renderPlan(); renderHome(); toast('保存しました');
+    });
+    const fd = $('#fixDel');
+    if (fd) fd.onclick = async () => { if (!confirm('この予定を削除しますか？')) return; closeSheet(); await del('fixed', id); await loadAll(); renderPlan(); renderHome(); toast('削除しました'); };
+    if (!id) setTimeout(() => $('#fn').focus(), 350);
+  }
+
+  // ===================== アーカイブ概要 =====================
+  function sheetSummary(sh) {
+    const snaps = state.allSnaps.filter(s => s.sheetId === sh.id).sort((a, b) => a.date < b.date ? -1 : 1);
+    const last = snaps[snaps.length - 1];
+    const finalAmt = last ? last.cumulative : 0;
+    const reached = snaps.find(s => s.cumulative >= sh.target_amount);
+    const fixedTotal = fixedMonthlyTotal(state.allFixed.filter(f => f.sheetId === sh.id));
+    const months = Math.max(1, monthsBetween(fromISO(sh.period_start), fromISO(last ? last.date : sh.period_end)));
+    const tl = state.allTasks.filter(t => t.sheetId === sh.id);
+    return { tasks: tl.length, tasksDone: tl.filter(t => t.done).length, finalAmt, reached, fixedTotal, avg: last ? finalAmt / months : 0, count: snaps.length, achieved: finalAmt >= sh.target_amount };
+  }
+
   // ===================== 設定 =====================
   function renderSettings() {
     const s = state.settings;
+    const arch = state.archived.map(sh => {
+      const m = sheetSummary(sh);
+      return `<div class="arch">
+        <div class="h"><b>${fromISO(sh.period_end).getFullYear()}年分</b><span class="pill ${m.achieved ? 'green' : 'gray'}">${m.achieved ? '達成' : '未達'}</span></div>
+        <div class="p">${mdLabel(sh.period_start)}〜${mdLabel(sh.period_end)}　目標 ${man(sh.target_amount)}円</div>
+        <div class="g">
+          <div><div class="k">最終累計</div><div class="v">${man(m.finalAmt)}</div></div>
+          <div><div class="k">${m.achieved ? '到達日' : '不足'}</div><div class="v">${m.achieved ? (() => { const d = fromISO(m.reached.date); return `${d.getMonth() + 1}/${d.getDate()}`; })() : man(sh.target_amount - m.finalAmt)}</div></div>
+          <div><div class="k">月平均</div><div class="v">${man(m.avg)}</div></div>
+        </div>
+        <div class="p" style="margin-top:8px;">記録 ${m.count}件${m.fixedTotal ? `　予定 月${man(m.fixedTotal)}円` : ''}${m.tasks ? `　やること ${m.tasksDone}/${m.tasks}完了` : ''}</div>
+      </div>`;
+    }).join('');
+
     $('#settingsScroll').innerHTML = `
-      <div class="sec-label">判定期間</div>
+      ${sheetBarHTML()}
+      <div class="sec-label">${sheetName(s)}の判定期間</div>
       <div class="card">
         <div class="field"><label>開始日</label><input type="date" id="ps" value="${s.period_start}"></div>
         <div class="field" style="margin-bottom:0;"><label>終了日</label><input type="date" id="pe" value="${s.period_end}"></div>
       </div>
-      <div class="sec-label">目標と想定ペース</div>
+      <div class="sec-label">${sheetName(s)}の目標</div>
       <div class="card">
+        <div class="field"><label>自分の目標期限</label><input type="date" id="gd" value="${s.goal_deadline}" min="${s.period_start}" max="${s.period_end}">
+          <div class="hint">判定期間末より早めに仕切る締め切り。試算・必要ペース・予定の計上月はこの日が基準です。</div></div>
         <div class="field"><label>目標額</label><div class="inwrap"><input type="number" inputmode="decimal" id="ta" value="${yenToMan(s.target_amount)}"><span class="unit">万円</span></div></div>
-        <div class="field" style="margin-bottom:0;"><label>想定月平均</label><div class="inwrap"><input type="number" inputmode="decimal" id="am" value="${yenToMan(s.assumed_monthly)}"><span class="unit">万円</span></div>
+        <div class="field" style="margin-bottom:0;"><label>想定月平均（予定分を含む総額）</label><div class="inwrap"><input type="number" inputmode="decimal" id="am" value="${yenToMan(s.assumed_monthly)}"><span class="unit">万円</span></div>
           <div class="hint">記録が1か月分たまるまでの試算に使います。以降は実績ペースで計算。</div></div>
       </div>
+
+      <div class="sec-label">アーカイブ（期間が終わった年）</div>
+      ${arch || `<div class="msg calm" style="font-size:12.5px;">判定期間が終わったシートは自動でここに移り、概要だけ見られます。そのときは新しい「翌々年分」が自動で追加されます。</div>`}
+
       <div class="sec-label">データ</div>
       <div class="card" style="padding:12px;">
-        <button class="btn ghost" id="btnExport" style="margin-bottom:10px;">JSON書き出し</button>
+        <button class="btn ghost" id="btnExport" style="margin-bottom:10px;">JSON書き出し（全シート）</button>
         <button class="btn ghost" id="btnImport">JSON取り込み</button>
         <input type="file" id="importFile" accept="application/json" style="display:none;">
       </div>
-      <div class="msg calm" style="font-size:12px;">制度の詳細や対象外の決済はANA公式情報を優先してください。アプリの数字は入力した累計からの見込みです。</div>
+      <div class="msg calm" style="font-size:12px;">制度の詳細や対象外の決済はANA公式情報を優先してください。アプリの数字は入力した累計と予定からの見込みです。</div>
       <div style="text-align:center; padding:6px 0 20px; font-size:12px; color:var(--tertiary);">300万メーター v${APP_VERSION}</div>
     `;
-    const save = async (patch) => { state.settings = { ...state.settings, ...patch, id: 'main' }; await put('settings', state.settings); renderHome(); renderLog(); };
-    $('#ps').onchange = e => e.target.value && save({ period_start: e.target.value });
-    $('#pe').onchange = e => e.target.value && save({ period_end: e.target.value });
-    $('#ta').onchange = e => save({ target_amount: manToYen(e.target.value) || DEFAULTS.target_amount });
-    $('#am').onchange = e => save({ assumed_monthly: manToYen(e.target.value) });
+    bindSheetBar($('#settingsScroll'), renderSettings);
+    const after = () => { renderSettings(); renderHome(); };
+    $('#ps').onchange = e => { const v = e.target.value; if (!v || v >= s.period_end) { toast('終了日より前にしてください'); e.target.value = s.period_start; return; } saveSheet({ period_start: v }).then(after); };
+    $('#pe').onchange = e => { const v = e.target.value; if (!v || v <= s.period_start) { toast('開始日より後にしてください'); e.target.value = s.period_end; return; } saveSheet({ period_end: v, goal_deadline: s.goal_deadline > v ? v : s.goal_deadline }).then(after); };
+    $('#gd').onchange = e => { const v = e.target.value; if (!v || v > s.period_end || v < s.period_start) { toast('判定期間内の日付にしてください'); e.target.value = s.goal_deadline; return; } saveSheet({ goal_deadline: v }).then(after); };
+    $('#ta').onchange = e => saveSheet({ target_amount: manToYen(e.target.value) || SHEET_DEFAULT.target_amount }).then(renderHome);
+    $('#am').onchange = e => saveSheet({ assumed_monthly: manToYen(e.target.value) }).then(renderHome);
     $('#btnExport').onclick = exportData;
     $('#btnImport').onclick = () => $('#importFile').click();
     $('#importFile').onchange = (e) => { if (e.target.files[0]) importData(e.target.files[0]); e.target.value = ''; };
   }
 
-  // ===================== sheet =====================
+  // ===================== sheet（下から出るパネル） =====================
   let sheetSave = null;
-  function openSheet(title, html, onSave) {
-    $('#sheetTitle').textContent = title; $('#sheetBody').innerHTML = html; sheetSave = onSave;
-    $('#sheetBg').classList.add('show'); $('#sheet').classList.add('show');
-  }
+  function openSheet(title, html, onSave) { $('#sheetTitle').textContent = title; $('#sheetBody').innerHTML = html; sheetSave = onSave; $('#sheetBg').classList.add('show'); $('#sheet').classList.add('show'); }
   function closeSheet() { $('#sheetBg').classList.remove('show'); $('#sheet').classList.remove('show'); document.activeElement && document.activeElement.blur(); }
   $('#sheetCancel').onclick = closeSheet;
   $('#sheetBg').onclick = closeSheet;
   $('#sheetSave').onclick = async () => { if (sheetSave) { const r = await sheetSave(); if (r === false) return; } closeSheet(); };
   $('#homeAdd').onclick = () => openSnapSheet(null);
   $('#logAdd').onclick = () => openSnapSheet(null);
+  $('#planAdd').onclick = () => openFixedSheet(null);
 
   // ===================== nav =====================
-  const RENDER = { home: renderHome, log: renderLog, settings: renderSettings };
-  function renderAll() { renderHome(); renderLog(); }
+  const RENDER = { home: renderHome, log: renderLog, plan: renderPlan, tasks: renderTasks, settings: renderSettings };
+  let currentView = 'home';
+  function renderAll() { RENDER[currentView](); if (currentView !== 'home') renderHome(); }
   function switchView(v) {
+    currentView = v;
     $$('.view').forEach(el => el.classList.toggle('active', el.id === 'view-' + v));
     $$('.tab').forEach(b => b.classList.toggle('active', b.dataset.v === v));
     RENDER[v](); const sc = $('#view-' + v + ' .scroll'); if (sc) sc.scrollTop = 0;
@@ -509,21 +829,29 @@
   function toast(m) { const el = $('#toast'); el.textContent = m; el.classList.add('show'); clearTimeout(toastT); toastT = setTimeout(() => el.classList.remove('show'), 1700); }
 
   // ===================== export / import =====================
-  const SCHEMA = 'ana300.v2';
+  const SCHEMA = 'ana300.v3';
   function exportData() {
-    const data = { schema: SCHEMA, exportedAt: new Date().toISOString(), settings: state.settings, snapshots: state.snaps };
+    const data = { schema: SCHEMA, exportedAt: new Date().toISOString(), prefs: state.prefs, sheets: state.sheets, snapshots: state.allSnaps, fixed: state.allFixed, tasks: state.allTasks };
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob); const a = document.createElement('a');
     a.href = url; a.download = 'ana300-sync.json'; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
     toast('書き出しました');
   }
+  async function mergeInto(storeName, items, local) {
+    const m = new Map(local.map(x => [x.id, x]));
+    for (const it of items || []) { const l = m.get(it.id); if (!l || (it.updatedAt || 0) > (l.updatedAt || 0)) await put(storeName, it); }
+  }
   async function importData(file) {
     try {
       const data = JSON.parse(await file.text());
-      if (data.schema !== SCHEMA) { toast('対応していないファイルです'); return; }
-      if (data.settings) { state.settings = { ...DEFAULTS, ...data.settings, id: 'main' }; await put('settings', state.settings); }
-      const local = new Map(state.snaps.map(x => [x.id, x]));
-      for (const it of (data.snapshots || [])) { const l = local.get(it.id); if (!l || (it.updatedAt || 0) > (l.updatedAt || 0)) await put('snapshots', it); }
+      if (data.schema === SCHEMA) {
+        await mergeInto('sheets', data.sheets, state.sheets);
+        await mergeInto('snapshots', data.snapshots, state.allSnaps);
+        await mergeInto('fixed', data.fixed, state.allFixed);
+        await mergeInto('tasks', data.tasks, state.allTasks);
+      } else if (data.schema === 'ana300.v2') {   // v2.0〜2.1の書き出し → 今開いているシートへ
+        await mergeInto('snapshots', (data.snapshots || []).map(s => ({ ...s, sheetId: s.sheetId || state.settings.id })), state.allSnaps);
+      } else { toast('対応していないファイルです'); return; }
       await loadAll(); switchView('home'); toast('取り込みました');
     } catch (e) { toast('読み込みに失敗しました'); }
   }
@@ -544,7 +872,7 @@
         if (reg.waiting && navigator.serviceWorker.controller) showUpdateBanner(reg.waiting);
         reg.addEventListener('updatefound', () => { const sw = reg.installing; if (!sw) return; sw.addEventListener('statechange', () => { if (sw.state === 'installed' && navigator.serviceWorker.controller) showUpdateBanner(sw); }); });
         reg.update();
-        document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') { reg.update(); renderHome(); } });
+        document.addEventListener('visibilitychange', async () => { if (document.visibilityState === 'visible') { reg.update(); await loadAll(); RENDER[currentView](); } });
         let refreshing = false; navigator.serviceWorker.addEventListener('controllerchange', () => { if (refreshing) return; refreshing = true; location.reload(); });
       } catch (e) {}
     });
