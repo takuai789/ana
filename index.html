@@ -17,222 +17,147 @@
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;600;700&display=swap" rel="stylesheet" />
 <style>
   :root {
-    --bg: #F2F2F7;
-    --card: #FFFFFF;
-    --ink: #1a1a1a;
-    --secondary: rgba(60,60,67,0.6);
-    --tertiary: rgba(60,60,67,0.32);
-    --sep: rgba(60,60,67,0.16);
-    --navy: #0B308E;
-    --navy-soft: #1456B0;
-    --mohican: #00AFF0;
-    --mohican-soft: #E1F4FD;
-    --amber: #F59E0B;
-    --amber-soft: #FEF3E2;
-    --green: #2FA66A;
-    --green-soft: #E7F5EE;
-    --blue: #007AFF;
+    --bg: #F2F2F7; --card: #FFFFFF; --ink: #1a1a1a;
+    --secondary: rgba(60,60,67,0.6); --tertiary: rgba(60,60,67,0.32); --sep: rgba(60,60,67,0.16);
+    --navy: #0B308E; --navy-soft: #1456B0;
+    --mohican: #00AFF0; --mohican-soft: #E1F4FD;
+    --amber: #F59E0B; --amber-soft: #FEF3E2;
+    --green: #2FA66A; --green-soft: #E7F5EE;
+    --blue: #0B308E;
     --safe-top: env(safe-area-inset-top, 0px);
     --safe-bottom: env(safe-area-inset-bottom, 0px);
   }
   * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
   html, body { height: 100%; overflow: hidden; background: var(--bg); }
-  body {
-    font-family: 'Noto Sans JP', -apple-system, BlinkMacSystemFont, 'Hiragino Sans', sans-serif;
-    color: var(--ink); font-size: 16px; -webkit-font-smoothing: antialiased;
-    overscroll-behavior: none;
-  }
-  #app { height: var(--app-height, 100%); display: flex; flex-direction: column; padding-top: var(--safe-top); transition: height 0.15s ease-out; }
+  body { font-family: 'Noto Sans JP', -apple-system, BlinkMacSystemFont, 'Hiragino Sans', sans-serif; color: var(--ink); font-size: 16px; -webkit-font-smoothing: antialiased; overscroll-behavior: none; }
+  #app { height: var(--app-height, 100%); display: flex; flex-direction: column; padding-top: var(--safe-top); }
 
   .view { display: none; flex-direction: column; flex: 1; min-height: 0; }
   .view.active { display: flex; }
-
-  .navbar {
-    display: flex; align-items: center; justify-content: space-between;
-    padding: 10px 14px; min-height: 44px; position: relative;
-    background: rgba(242,242,247,0.92);
-    backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
-    border-bottom: 0.5px solid var(--sep); z-index: 10;
-  }
+  .navbar { display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; min-height: 44px; position: relative; background: rgba(242,242,247,0.92); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border-bottom: 0.5px solid var(--sep); z-index: 10; }
   .navbar .title { font-size: 17px; font-weight: 700; position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); pointer-events: none; white-space: nowrap; }
   .navbar .lead { font-size: 13px; color: var(--secondary); font-weight: 500; }
-  .icon-btn { width: 34px; min-width: 34px; height: 34px; display: flex; align-items: center; justify-content: center; color: var(--navy); background: none; border: 0; cursor: pointer; font-size: 15px; font-weight: 600; }
-
+  .icon-btn { min-width: 34px; height: 34px; display: flex; align-items: center; justify-content: center; color: var(--navy); background: none; border: 0; cursor: pointer; font-size: 22px; font-weight: 500; font-family: inherit; }
   .scroll { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; padding: 14px 14px calc(20px + var(--safe-bottom)); }
 
   .card { background: var(--card); border-radius: 16px; padding: 16px; margin-bottom: 12px; }
-  .card.tap { cursor: pointer; }
-  .card.tap:active { background: #fafafa; }
-  .sec-label { font-size: 12px; font-weight: 600; color: var(--secondary); letter-spacing: .02em; margin: 4px 2px 8px; text-transform: none; }
+  .sec-label { font-size: 12px; font-weight: 600; color: var(--secondary); margin: 6px 2px 8px; }
 
-  /* dashboard hero gauge */
   .hero { background: linear-gradient(150deg, var(--navy) 0%, var(--navy-soft) 100%); color: #fff; border-radius: 20px; padding: 20px; margin-bottom: 14px; }
   .hero .lbl { font-size: 12px; opacity: .8; font-weight: 500; }
-  .hero .big { font-size: 34px; font-weight: 700; letter-spacing: -.01em; margin: 2px 0 2px; }
+  .hero .big { font-size: 34px; font-weight: 700; letter-spacing: -.01em; margin: 2px 0; }
+  .hero .big small { font-size: 18px; font-weight: 600; }
   .hero .sub { font-size: 13px; opacity: .85; }
-  .gauge { height: 12px; border-radius: 99px; background: rgba(255,255,255,.18); overflow: hidden; margin: 14px 0 8px; position: relative; }
+  .gauge { height: 12px; border-radius: 99px; background: rgba(255,255,255,.18); overflow: hidden; margin: 14px 0 8px; }
   .gauge > i { display: block; height: 100%; border-radius: 99px; background: linear-gradient(90deg, var(--mohican), #5fd0ff); transition: width .5s cubic-bezier(.32,.72,0,1); }
-  .gauge-safe { position: absolute; top:0; bottom:0; background: rgba(255,255,255,.30); border-radius:99px; }
   .hero-row { display: flex; justify-content: space-between; font-size: 12px; opacity: .85; }
 
-  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .forecast { background: var(--card); border-radius: 16px; padding: 16px; margin-bottom: 12px; }
+  .forecast .k { font-size: 12px; color: var(--secondary); font-weight: 600; }
+  .forecast .v { font-size: 26px; font-weight: 700; margin: 2px 0 6px; color: var(--navy); }
+  .forecast .d { font-size: 13px; line-height: 1.7; color: #38465e; }
+
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px; }
   .stat { background: var(--card); border-radius: 14px; padding: 13px 14px; }
   .stat .k { font-size: 11.5px; color: var(--secondary); font-weight: 500; }
   .stat .v { font-size: 20px; font-weight: 700; margin-top: 2px; }
   .stat .v small { font-size: 12px; font-weight: 600; color: var(--secondary); }
 
-  .pill { display:inline-flex; align-items:center; gap:5px; font-size: 12.5px; font-weight: 600; padding: 5px 11px; border-radius: 99px; }
+  .pill { display: inline-flex; align-items: center; font-size: 12.5px; font-weight: 600; padding: 5px 11px; border-radius: 99px; }
   .pill.green { background: var(--green-soft); color: var(--green); }
   .pill.amber { background: var(--amber-soft); color: #B26A00; }
-  .pill.navy { background: #E7EBF3; color: var(--navy); }
+  .pill.blue { background: var(--mohican-soft); color: #0678A8; }
   .pill.gray { background: #ECECEF; color: var(--secondary); }
 
-  .msg { background: var(--amber-soft); border-radius: 14px; padding: 14px 15px; font-size: 13.5px; line-height: 1.7; color: #5b4a2a; white-space: pre-wrap; }
+  .msg { border-radius: 14px; padding: 14px 15px; font-size: 13.5px; line-height: 1.7; white-space: pre-wrap; margin-bottom: 12px; }
   .msg.calm { background: #EEF1F6; color: #38465e; }
   .msg.good { background: var(--green-soft); color: #1f6b46; }
+  .msg.warn { background: var(--amber-soft); color: #5b4a2a; }
+  .msg.tap { cursor: pointer; display: flex; align-items: center; gap: 10px; }
 
-  /* rows / lists */
-  .row { display:flex; align-items:center; gap:12px; padding: 13px 14px; background: var(--card); border-bottom: 0.5px solid var(--sep); }
+  .chart { background: var(--card); border-radius: 16px; padding: 14px 10px 8px; margin-bottom: 12px; }
+  .chart svg { display: block; width: 100%; height: auto; }
+  .legend { display: flex; gap: 14px; justify-content: center; font-size: 11px; color: var(--secondary); padding: 6px 0 2px; }
+  .legend span { display: inline-flex; align-items: center; gap: 5px; }
+  .legend i { display: inline-block; width: 14px; height: 0; border-top: 2.5px solid; }
+
   .list { background: var(--card); border-radius: 16px; overflow: hidden; margin-bottom: 12px; }
-  .list .row:last-child { border-bottom: 0; }
-  .row.tap:active { background: #f6f6f8; }
+  .row { display: flex; align-items: center; gap: 12px; padding: 13px 14px; border-bottom: 0.5px solid var(--sep); cursor: pointer; }
+  .row:last-child { border-bottom: 0; }
+  .row:active { background: #f6f6f8; }
   .row .main { flex: 1; min-width: 0; }
   .row .ttl { font-size: 15px; font-weight: 600; }
-  .row .meta { font-size: 12px; color: var(--secondary); margin-top: 2px; }
+  .row .meta { font-size: 12px; color: var(--secondary); margin-top: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .row .amt { font-size: 15px; font-weight: 700; text-align: right; white-space: nowrap; }
-  .row .amt small { font-size: 11px; color: var(--secondary); font-weight: 500; display:block; margin-top:1px; }
+  .row .amt small { font-size: 11.5px; font-weight: 600; display: block; margin-top: 1px; color: var(--green); }
   .chev { color: var(--tertiary); }
+  .empty { text-align: center; color: var(--secondary); font-size: 13.5px; padding: 34px 16px; line-height: 1.8; }
 
-  .empty { text-align: center; color: var(--secondary); font-size: 13.5px; padding: 30px 16px; line-height: 1.7; }
+  .btn { width: 100%; border: 0; border-radius: 13px; padding: 14px; font-family: inherit; font-size: 15px; font-weight: 700; cursor: pointer; }
+  .btn.primary { background: var(--navy); color: #fff; margin-bottom: 12px; }
+  .btn.ghost { background: #E7EBF3; color: var(--navy); }
 
-  /* tab bar */
   .tabbar { display: flex; border-top: 0.5px solid var(--sep); background: rgba(248,248,250,0.94); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); padding-bottom: var(--safe-bottom); }
-  .tab { flex: 1; border: 0; background: none; padding: 7px 0 5px; display: flex; flex-direction: column; align-items: center; gap: 3px; color: var(--tertiary); cursor: pointer; }
+  .tab { flex: 1; border: 0; background: none; padding: 7px 0 5px; display: flex; flex-direction: column; align-items: center; gap: 3px; color: var(--tertiary); cursor: pointer; font-family: inherit; }
   .tab.active { color: var(--navy); }
   .tab span { font-size: 10px; font-weight: 600; }
   .tab svg { width: 25px; height: 25px; }
 
-  /* sheet */
   .sheet-bg { position: fixed; inset: 0; background: rgba(0,0,0,.35); opacity: 0; pointer-events: none; transition: opacity .25s; z-index: 200; }
   .sheet-bg.show { opacity: 1; pointer-events: auto; }
   .sheet { position: fixed; left: 0; right: 0; bottom: 0; z-index: 201; background: var(--bg); border-radius: 20px 20px 0 0; transform: translateY(100%); transition: transform .3s cubic-bezier(.32,.72,0,1); max-height: 92%; display: flex; flex-direction: column; padding-bottom: var(--safe-bottom); }
   .sheet.show { transform: translateY(0); }
-  .sheet-head { display:flex; align-items:center; justify-content:space-between; padding: 14px 16px 8px; }
+  .sheet-head { display: flex; align-items: center; justify-content: space-between; padding: 14px 16px 8px; }
   .sheet-head .t { font-size: 17px; font-weight: 700; }
-  .sheet-head button { background:none; border:0; font-size:15px; font-weight:600; color: var(--blue); cursor:pointer; }
-  .sheet-head .del { color: var(--amber); font-size:14px; }
-  .sheet-body { overflow-y:auto; padding: 4px 16px 20px; }
+  .sheet-head button { background: none; border: 0; font-family: inherit; font-size: 15px; font-weight: 600; color: var(--blue); cursor: pointer; }
+  .sheet-body { overflow-y: auto; padding: 4px 16px 20px; }
+  .del-btn { width: 100%; border: 0; background: none; color: #B26A00; font-family: inherit; font-size: 14px; font-weight: 600; padding: 12px; cursor: pointer; }
 
   .field { margin-bottom: 14px; }
-  .field > label { display:block; font-size: 12.5px; font-weight: 600; color: var(--secondary); margin: 0 2px 6px; }
-  .field .hint { font-size: 11.5px; color: var(--tertiary); margin: 5px 2px 0; line-height:1.5; }
-  input[type=text], input[type=number], input[type=date], textarea {
-    width: 100%; font-family: inherit; font-size: 16px; color: var(--ink);
-    background: var(--card); border: 0; border-radius: 12px; padding: 13px 14px; outline: none;
-  }
-  input[type=number]{ text-align: right; }
-  textarea { min-height: 70px; resize: none; text-align: left; }
+  .field > label { display: block; font-size: 12.5px; font-weight: 600; color: var(--secondary); margin: 0 2px 6px; }
+  .field .hint { font-size: 11.5px; color: var(--tertiary); margin: 5px 2px 0; line-height: 1.5; }
+  input[type=text], input[type=number], input[type=date] { width: 100%; font-family: inherit; font-size: 16px; color: var(--ink); background: var(--card); border: 0; border-radius: 12px; padding: 13px 14px; outline: none; -webkit-appearance: none; appearance: none; min-height: 48px; }
+  input[type=number] { text-align: right; }
   .inwrap { position: relative; }
-  .inwrap .unit { position:absolute; right:14px; top:50%; transform:translateY(-50%); font-size:13px; color:var(--secondary); pointer-events:none; }
-  .inwrap input { padding-right: 44px; }
-  .chips { display:flex; gap:6px; margin-top:8px; flex-wrap:wrap; }
-  .chips button { border:0; background:#EAF1FB; color:var(--navy); font-family:inherit; font-size:13px; font-weight:600; padding:8px 13px; border-radius:9px; cursor:pointer; }
-  .chips button:active { background:#d9e6f9; }
+  .inwrap input { padding-right: 48px; }
+  .inwrap .unit { position: absolute; right: 14px; top: 50%; transform: translateY(-50%); font-size: 13px; color: var(--secondary); pointer-events: none; }
+  input.big { font-size: 26px; font-weight: 700; padding-top: 16px; padding-bottom: 16px; }
+  .prev-note { font-size: 12.5px; color: var(--secondary); margin: 8px 2px 0; }
+  .prev-note b { color: var(--green); }
 
-  .seg { display:flex; background:#E9E9ED; border-radius: 11px; padding: 3px; gap:3px; }
-  .seg button { flex:1; border:0; background:none; font-family:inherit; font-size:13px; font-weight:600; color:var(--secondary); padding:9px 4px; border-radius:9px; cursor:pointer; }
-  .seg button.on { background:#fff; color:var(--navy); box-shadow:0 1px 3px rgba(0,0,0,.12); }
-
-  .toggle { width:51px; height:31px; border-radius:99px; background:#E9E9EB; position:relative; transition:background .2s; cursor:pointer; flex-shrink:0; }
-  .toggle.on { background: var(--green); }
-  .toggle i { position:absolute; top:2px; left:2px; width:27px; height:27px; border-radius:50%; background:#fff; box-shadow:0 1px 4px rgba(0,0,0,.25); transition:left .2s; }
-  .toggle.on i { left:22px; }
-
-  .btn { width:100%; border:0; border-radius:13px; padding:14px; font-family:inherit; font-size:15px; font-weight:700; cursor:pointer; }
-  .btn.primary { background: var(--navy); color:#fff; }
-  .btn.ghost { background:#E7EBF3; color: var(--navy); }
-  .add-btn { width:100%; border:1.5px dashed var(--tertiary); background:none; border-radius:14px; padding:14px; font-family:inherit; font-size:14px; font-weight:600; color:var(--navy); cursor:pointer; margin-bottom: 12px; }
-
-  .mini-score { font-size:11px; font-weight:700; padding:2px 8px; border-radius:99px; }
-
-  /* update banner */
-  #updateBanner { position: fixed; left: 12px; right: 12px; bottom: calc(var(--safe-bottom) + 70px); z-index: 1000; display: flex; align-items: center; justify-content: center; gap: 8px; background: var(--navy); color: #fff; border: 0; border-radius: 14px; padding: 14px 18px; font-family: inherit; font-size: 14px; font-weight: 600; box-shadow: 0 8px 28px rgba(27,42,74,0.4); cursor: pointer; transform: translateY(160%); transition: transform 0.35s cubic-bezier(.32,.72,0,1); }
+  #updateBanner { position: fixed; left: 12px; right: 12px; bottom: calc(var(--safe-bottom) + 70px); z-index: 1000; display: flex; align-items: center; justify-content: center; gap: 8px; background: var(--navy); color: #fff; border: 0; border-radius: 14px; padding: 14px 18px; font-family: inherit; font-size: 14px; font-weight: 600; box-shadow: 0 8px 28px rgba(11,48,142,0.4); cursor: pointer; transform: translateY(160%); transition: transform 0.35s cubic-bezier(.32,.72,0,1); }
   #updateBanner.show { transform: translateY(0); }
-  #updateBanner svg { display:block; flex-shrink:0; }
-
-  .toast { position: fixed; left:50%; bottom: calc(var(--safe-bottom) + 78px); transform: translateX(-50%) translateY(20px); background: rgba(20,20,22,.92); color:#fff; font-size:13px; font-weight:600; padding:11px 18px; border-radius:99px; opacity:0; transition: all .25s; z-index: 1100; pointer-events:none; }
-  .toast.show { opacity:1; transform: translateX(-50%) translateY(0); }
+  .toast { position: fixed; left: 50%; bottom: calc(var(--safe-bottom) + 78px); transform: translateX(-50%) translateY(20px); background: rgba(20,20,22,.92); color: #fff; font-size: 13px; font-weight: 600; padding: 11px 18px; border-radius: 99px; opacity: 0; transition: all .25s; z-index: 1100; pointer-events: none; white-space: nowrap; }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 </style>
 </head>
 <body>
 <div id="app">
-
-  <!-- ===== ホーム ===== -->
   <div id="view-home" class="view active">
-    <div class="navbar"><span class="lead" id="homePeriod"></span><span class="title">300万メーター</span><span style="width:34px;"></span></div>
+    <div class="navbar"><span class="lead" id="homeLead"></span><span class="title">300万メーター</span><button class="icon-btn" id="homeAdd" aria-label="記録する">＋</button></div>
     <div class="scroll" id="homeScroll"></div>
   </div>
-
-  <!-- ===== 月次 ===== -->
-  <div id="view-months" class="view">
-    <div class="navbar"><span style="width:34px;"></span><span class="title">月次入力</span><span style="width:34px;"></span></div>
-    <div class="scroll" id="monthsScroll"></div>
+  <div id="view-log" class="view">
+    <div class="navbar"><span style="width:34px;"></span><span class="title">記録</span><button class="icon-btn" id="logAdd" aria-label="記録する">＋</button></div>
+    <div class="scroll" id="logScroll"></div>
   </div>
-
-  <!-- ===== シナリオ ===== -->
-  <div id="view-scenarios" class="view">
-    <div class="navbar"><span style="width:34px;"></span><span class="title">シナリオ</span><button class="icon-btn" id="addScenario">＋</button></div>
-    <div class="scroll" id="scenScroll"></div>
-  </div>
-
-  <!-- ===== 寄せ候補 ===== -->
-  <div id="view-cand" class="view">
-    <div class="navbar"><span style="width:34px;"></span><span class="title">寄せ候補</span><button class="icon-btn" id="addCand">＋</button></div>
-    <div class="scroll" id="candScroll"></div>
-  </div>
-
-  <!-- ===== 設定 ===== -->
   <div id="view-settings" class="view">
     <div class="navbar"><span style="width:34px;"></span><span class="title">設定</span><span style="width:34px;"></span></div>
     <div class="scroll" id="settingsScroll"></div>
   </div>
 
-  <!-- tab bar -->
-  <div class="tabbar" id="tabbar">
-    <button class="tab active" data-v="home">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 4 9v11h5v-6h6v6h5V9z"/></svg>
-      <span>ホーム</span>
-    </button>
-    <button class="tab" data-v="months">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="17" rx="2.5"/><path d="M3 9h18M8 2v4M16 2v4"/></svg>
-      <span>月次</span>
-    </button>
-    <button class="tab" data-v="scenarios">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19V5M4 19h16M8 16v-5M13 16V8M18 16v-9"/></svg>
-      <span>シナリオ</span>
-    </button>
-    <button class="tab" data-v="cand">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 6h13M8 12h13M8 18h13M3.5 6h.01M3.5 12h.01M3.5 18h.01"/></svg>
-      <span>寄せ候補</span>
-    </button>
-    <button class="tab" data-v="settings">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.2"/><path d="M19.4 13a1.6 1.6 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.6 1.6 0 0 0-2.7 1.1V20a2 2 0 1 1-4 0v-.1A1.6 1.6 0 0 0 7 18.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.6 1.6 0 0 0-1.1-2.7H3a2 2 0 1 1 0-4h.1A1.6 1.6 0 0 0 4.2 7l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.6 1.6 0 0 0 1.8.3H9a1.6 1.6 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.6 1.6 0 0 0 2.7 1.1l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.6 1.6 0 0 0-.3 1.8V9a1.6 1.6 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.6 1.6 0 0 0-1.5 1z"/></svg>
-      <span>設定</span>
-    </button>
+  <div class="tabbar">
+    <button class="tab active" data-v="home"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 4 9v11h5v-6h6v6h5V9z"/></svg><span>ホーム</span></button>
+    <button class="tab" data-v="log"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="17" rx="2.5"/><path d="M3 9h18M8 2v4M16 2v4"/></svg><span>記録</span></button>
+    <button class="tab" data-v="settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.2"/><path d="M12 2v3M12 19v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M2 12h3M19 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1"/></svg><span>設定</span></button>
   </div>
 </div>
 
-<!-- sheet -->
 <div class="sheet-bg" id="sheetBg"></div>
 <div class="sheet" id="sheet">
-  <div class="sheet-head">
-    <button id="sheetCancel">キャンセル</button>
-    <span class="t" id="sheetTitle"></span>
-    <button id="sheetSave">保存</button>
-  </div>
+  <div class="sheet-head"><button id="sheetCancel">キャンセル</button><span class="t" id="sheetTitle"></span><button id="sheetSave">保存</button></div>
   <div class="sheet-body" id="sheetBody"></div>
 </div>
-
 <div class="toast" id="toast"></div>
 
 <script>
@@ -241,10 +166,12 @@
   const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
   const now = () => Date.now();
 
+  const APP_VERSION = '2.0.0';
+
   // ---------- IndexedDB ----------
-  const DB_NAME = 'ana300-db';      // 表示名を変えても固定（データ互換のため）
-  const DB_VERSION = 1;
-  const STORES = ['settings', 'months', 'candidates', 'scenarios'];
+  const DB_NAME = 'ana300-db';
+  const DB_VERSION = 3;                    // v2.0: snapshots ストア追加（旧ストアは使わない）
+  const STORES = ['settings', 'snapshots'];
   let _db = null;
   function openDB() {
     return new Promise((resolve, reject) => {
@@ -254,307 +181,271 @@
       req.onerror = () => reject(req.error);
     });
   }
-  const tx = (s, m='readonly') => _db.transaction(s, m).objectStore(s);
-  const getAll = (s) => new Promise((res, rej) => { const r = tx(s).getAll(); r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error); });
-  const put = (s, v) => new Promise((res, rej) => { const r = tx(s,'readwrite').put(v); r.onsuccess = () => res(); r.onerror = () => rej(r.error); });
-  const del = (s, id) => new Promise((res, rej) => { const r = tx(s,'readwrite').delete(id); r.onsuccess = () => res(); r.onerror = () => rej(r.error); });
+  const store = (s, m='readonly') => _db.transaction(s, m).objectStore(s);
+  const getAll = (s) => new Promise((res, rej) => { const r = store(s).getAll(); r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error); });
+  const put = (s, v) => new Promise((res, rej) => { const r = store(s,'readwrite').put(v); r.onsuccess = () => res(); r.onerror = () => rej(r.error); });
+  const del = (s, id) => new Promise((res, rej) => { const r = store(s,'readwrite').delete(id); r.onsuccess = () => res(); r.onerror = () => rej(r.error); });
 
-  // ---------- version ----------
-  const APP_VERSION = '1.2.0';
-
-  // ---------- defaults / state ----------
+  // ---------- state ----------
   const DEFAULTS = {
     id: 'main',
     target_amount: 3000000,
     period_start: '2026-12-16',
     period_end: '2027-12-15',
-    risk_buffer: 100000,
-    monthly_natural_spend: 150000,
-    annual_boost_expected: 500000,
-    allow_lite: true,
+    assumed_monthly: 200000,   // 記録が少ないうちに使う想定ペース
   };
-  const state = { settings: {...DEFAULTS}, months: [], candidates: [], scenarios: [] };
-
+  const state = { settings: { ...DEFAULTS }, snaps: [] };
   async function loadAll() {
     const s = (await getAll('settings'))[0];
     state.settings = s ? { ...DEFAULTS, ...s, id: 'main' } : { ...DEFAULTS };
-    state.months = (await getAll('months')).sort((a,b)=> a.month < b.month ? -1 : 1);
-    state.candidates = (await getAll('candidates')).sort((a,b)=> (a.order??0)-(b.order??0));
-    state.scenarios = (await getAll('scenarios')).sort((a,b)=> (a.order??0)-(b.order??0));
+    state.snaps = (await getAll('snapshots')).sort((a, b) => a.date < b.date ? -1 : a.date > b.date ? 1 : 0);
   }
 
   // ---------- format ----------
-  const yen = (n) => Math.round(n||0).toLocaleString('ja-JP') + '円';
-  const man = (n) => { const v=(n||0)/10000; const s=Math.abs(v)>=100?Math.round(v):Math.round(v*10)/10; return s.toLocaleString('ja-JP')+'万'; };
-  const signMan = (n) => (n>=0?'+':'') + man(n);
-  function ym(m){ const [y,mo]=m.split('-'); return `${y}年${parseInt(mo)}月`; }
+  const man = (n) => { const v = (n || 0) / 10000; const r = Math.abs(v) >= 100 ? Math.round(v) : Math.round(v * 10) / 10; return r.toLocaleString('ja-JP') + '万'; };
+  const signMan = (n) => (n >= 0 ? '+' : '') + man(n);
+  const pad = (n) => String(n).padStart(2, '0');
+  const toISO = (d) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+  const fromISO = (s) => new Date(s + 'T00:00:00');
+  const ymLabel = (d) => `${d.getFullYear()}年${d.getMonth() + 1}月`;
+  const mdLabel = (s) => { const d = fromISO(s); return `${d.getFullYear()}/${d.getMonth() + 1}/${d.getDate()}`; };
+  const DAY = 86400000, MONTH_DAYS = 30.44;
+  const monthsBetween = (a, b) => (b - a) / DAY / MONTH_DAYS;
+  function esc(s) { return String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c])); }
+  function parseNum(v) { const n = Number(String(v).replace(/[^0-9.-]/g, '')); return isNaN(n) ? 0 : n; }
+  const manToYen = (v) => Math.round(parseNum(v) * 10000);
+  const yenToMan = (y) => Math.round(((y || 0) / 10000) * 1000) / 1000;
 
-  // ---------- period math ----------
-  function periodInfo() {
-    const s = new Date(state.settings.period_start + 'T00:00:00');
-    const e = new Date(state.settings.period_end + 'T00:00:00');
+  // その月の末日（記録日の初期値）
+  function defaultSnapDate() {
     const t = new Date();
-    const DAY = 86400000;
-    const totalDays = Math.max(1, Math.round((e - s) / DAY));
-    let elapsedDays = Math.round((t - s) / DAY);
-    elapsedDays = Math.max(0, Math.min(totalDays, elapsedDays));
-    const remainingDays = totalDays - elapsedDays;
-    const frac = elapsedDays / totalDays;
-    const elapsedMonths = Math.max(0, Math.round(elapsedDays / 30.44));
-    const remainingMonths = Math.max(0, Math.round(remainingDays / 30.44));
-    return { s, e, totalDays, elapsedDays, remainingDays, frac, elapsedMonths, remainingMonths };
+    const last = new Date(t.getFullYear(), t.getMonth() + 1, 0);
+    // 月の前半なら「先月末」の記録とみなす
+    if (t.getDate() <= 10) return toISO(new Date(t.getFullYear(), t.getMonth(), 0));
+    return toISO(last);
   }
-  // 判定期間にかかる暦月の一覧
-  function periodMonths() {
-    const s = new Date(state.settings.period_start + 'T00:00:00');
-    const e = new Date(state.settings.period_end + 'T00:00:00');
-    const out = []; let y = s.getFullYear(), m = s.getMonth();
-    const ey = e.getFullYear(), em = e.getMonth();
-    while (y < ey || (y === ey && m <= em)) { out.push(`${y}-${String(m+1).padStart(2,'0')}`); m++; if (m>11){m=0;y++;} }
-    return out;
-  }
-  function monthRec(m){ return state.months.find(x=>x.month===m) || { id:'m_'+m, month:m, ana_card:0, ana_pay:0, refund:0, uncertain:0, note:'' }; }
-  const monthTarget = (r) => (r.ana_card||0)+(r.ana_pay||0)-(r.refund||0);
-  const monthSafe   = (r) => monthTarget(r)-(r.uncertain||0);
 
-  // 着地見込み: 実績 ＋ これからの自然ペース。
-  // 期間序盤は設定の自然ペースを重視し、進むほど実測ペースへ寄せるブレンド（乱高下を抑える）。
-  function projectLanding(actual, p) {
+  // ---------- 試算 ----------
+  function forecast() {
     const s = state.settings;
-    const w = Math.max(0, Math.min(1, p.frac));
-    const observedRemaining = p.elapsedMonths > 0 ? (actual / p.elapsedMonths) * p.remainingMonths : 0;
-    const assumedRemaining = (s.monthly_natural_spend||0) * p.remainingMonths
-                           + (s.annual_boost_expected||0) * (p.remainingMonths / 12);
-    const remaining = w * observedRemaining + (1 - w) * assumedRemaining;
-    return actual + remaining;
-  }
-  function totals() {
-    const target = state.settings.target_amount;
-    const buffer = state.settings.risk_buffer;
-    let cur=0, safe=0;
-    for (const r of state.months) { cur += monthTarget(r); safe += monthSafe(r); }
-    const p = periodInfo();
-    const landing = projectLanding(cur, p);          // 着地見込み（プラン反映）
-    const safeLanding = projectLanding(safe, p);     // 安全側 着地見込み
+    const target = s.target_amount;
+    const start = fromISO(s.period_start), end = fromISO(s.period_end);
+    const totalMonths = Math.max(0.1, monthsBetween(start, end));
+    const today = new Date(); today.setHours(0, 0, 0, 0);
+    const latest = state.snaps[state.snaps.length - 1] || null;
+    const cur = latest ? latest.cumulative : 0;
+    const asOf = latest ? fromISO(latest.date) : (today < start ? start : today);
+    const elapsed = Math.max(0, monthsBetween(start, asOf));
+    const remainMonths = Math.max(0, monthsBetween(asOf, end));
     const remain = Math.max(0, target - cur);
-    const needMonthly = p.remainingMonths>0 ? remain / p.remainingMonths : 0;
-    return { target, buffer, cur, safe, landing, safeLanding, remain, needMonthly, p };
+
+    // ペース：1か月以上たっていれば実績、それまでは想定値
+    let pace, paceSrc;
+    if (latest && elapsed >= 1) { pace = cur / elapsed; paceSrc = 'actual'; }
+    else { pace = s.assumed_monthly; paceSrc = 'assumed'; }
+
+    const needMonthly = remainMonths > 0 ? remain / remainMonths : remain;
+    const landing = cur + pace * remainMonths;
+    let reachDate = null, monthsToReach = null;
+    if (cur >= target) { reachDate = asOf; monthsToReach = 0; }
+    else if (pace > 0) { monthsToReach = remain / pace; reachDate = new Date(asOf.getTime() + monthsToReach * MONTH_DAYS * DAY); }
+
+    // 前回記録からの増加
+    let lastDiff = null;
+    if (state.snaps.length >= 2) { const a = state.snaps[state.snaps.length - 2], b = latest; lastDiff = b.cumulative - a.cumulative; }
+
+    let status;
+    if (cur >= target) status = { key: 'done', label: '達成', cls: 'green' };
+    else if (reachDate && reachDate <= end) status = { key: 'ontrack', label: '期間内に届く見込み', cls: 'green' };
+    else if (landing >= target * 0.9) status = { key: 'close', label: 'あと少し', cls: 'amber' };
+    else status = { key: 'behind', label: '届かない見込み', cls: 'gray' };
+
+    const beforeStart = asOf < start && !latest;
+    return { target, start, end, totalMonths, cur, asOf, elapsed, remainMonths, remain, pace, paceSrc, needMonthly, landing, reachDate, monthsToReach, lastDiff, status, latest, beforeStart };
   }
 
-  function statusOf(safeLanding, buffer) {
-    if (safeLanding >= 3000000 + buffer) return { key:'safe', label:'安全圏', cls:'green' };
-    if (safeLanding >= 3000000)          return { key:'almost', label:'ほぼ達成', cls:'green' };
-    if (safeLanding >= 2700000)          return { key:'adjust', label:'要調整', cls:'amber' };
-    if (safeLanding >= 2000000)          return { key:'hard', label:'厳しい', cls:'amber' };
-    return { key:'avoid', label:'狙わない方が自然', cls:'gray' };
+  // ---------- リマインド ----------
+  function reminder() {
+    const t = new Date();
+    const latest = state.snaps[state.snaps.length - 1];
+    const prevMonthEnd = new Date(t.getFullYear(), t.getMonth(), 0);
+    const curYM = `${t.getFullYear()}-${pad(t.getMonth() + 1)}`;
+    const prevYM = toISO(prevMonthEnd).slice(0, 7);
+    const lastYM = latest ? latest.date.slice(0, 7) : null;
+    if (t.getDate() >= 25 && lastYM !== curYM) return `${t.getMonth() + 1}月末の記録の時期です。利用実績照会の累計を入れましょう`;
+    if (t.getDate() <= 10 && (!lastYM || lastYM < prevYM)) return `${prevMonthEnd.getMonth() + 1}月末の記録がまだです`;
+    return '';
   }
 
-  // 無理度（採用した寄せ候補から集計）
-  const CLASS_SCORE = { '自然支出':0, '寄せ替え':0, '前倒し':1, '危険':3 };
-  function hardnessTotal() {
-    return state.candidates.filter(c=>c.decision==='採用').reduce((a,c)=> a + (CLASS_SCORE[c.klass]??0), 0);
+  // ---------- グラフ ----------
+  function chartSVG(f) {
+    const W = 340, H = 190, L = 34, R = 10, T = 12, B = 26;
+    const pw = W - L - R, ph = H - T - B;
+    const t0 = f.start.getTime(), t1 = f.end.getTime();
+    const yMax = Math.max(f.target * 1.08, f.landing, ...state.snaps.map(s => s.cumulative)) || f.target;
+    const x = (ms) => L + Math.max(0, Math.min(1, (ms - t0) / (t1 - t0))) * pw;
+    const y = (v) => T + ph - (v / yMax) * ph;
+
+    let g = '';
+    // y軸目盛（100万ごと）
+    for (let v = 0; v <= yMax; v += 1000000) {
+      g += `<line x1="${L}" x2="${W - R}" y1="${y(v)}" y2="${y(v)}" stroke="rgba(60,60,67,.10)" stroke-width="1"/>`;
+      g += `<text x="${L - 6}" y="${y(v) + 3.5}" font-size="9.5" text-anchor="end" fill="rgba(60,60,67,.55)">${v / 10000}万</text>`;
+    }
+    // x軸ラベル（開始・中間・終了）
+    const mid = new Date((t0 + t1) / 2);
+    [[f.start, 'start'], [mid, 'middle'], [f.end, 'end']].forEach(([d, a]) => {
+      g += `<text x="${x(d.getTime())}" y="${H - 8}" font-size="9.5" text-anchor="${a}" fill="rgba(60,60,67,.55)">${d.getFullYear() % 100}/${d.getMonth() + 1}</text>`;
+    });
+    // 目標ライン
+    g += `<line x1="${L}" x2="${W - R}" y1="${y(f.target)}" y2="${y(f.target)}" stroke="#F59E0B" stroke-width="1.5" stroke-dasharray="5 4"/>`;
+    g += `<text x="${W - R}" y="${y(f.target) - 5}" font-size="10" font-weight="700" text-anchor="end" fill="#B26A00">${f.target / 10000}万</text>`;
+    // 実績
+    const pts = [[t0, 0], ...state.snaps.filter(s => fromISO(s.date).getTime() >= t0).map(s => [fromISO(s.date).getTime(), s.cumulative])];
+    if (pts.length >= 2) {
+      const d = pts.map((p, i) => `${i ? 'L' : 'M'}${x(p[0]).toFixed(1)},${y(p[1]).toFixed(1)}`).join(' ');
+      const area = d + ` L${x(pts[pts.length - 1][0]).toFixed(1)},${y(0)} L${x(t0)},${y(0)} Z`;
+      g += `<path d="${area}" fill="rgba(11,48,142,.08)"/>`;
+      g += `<path d="${d}" fill="none" stroke="#0B308E" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>`;
+    }
+    // 見込み（最新→期間末）
+    const lastP = pts[pts.length - 1];
+    if (f.remainMonths > 0) {
+      g += `<line x1="${x(lastP[0])}" y1="${y(lastP[1])}" x2="${x(t1)}" y2="${y(f.landing)}" stroke="#00AFF0" stroke-width="2" stroke-dasharray="4 4"/>`;
+      g += `<circle cx="${x(t1)}" cy="${y(f.landing)}" r="3.5" fill="#fff" stroke="#00AFF0" stroke-width="2"/>`;
+    }
+    pts.slice(1).forEach(p => { g += `<circle cx="${x(p[0])}" cy="${y(p[1])}" r="3.5" fill="#0B308E" stroke="#fff" stroke-width="1.5"/>`; });
+    // 今日
+    const today = Date.now();
+    if (today > t0 && today < t1) g += `<line x1="${x(today)}" x2="${x(today)}" y1="${T}" y2="${T + ph}" stroke="rgba(60,60,67,.25)" stroke-width="1"/>`;
+
+    return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="累計利用額の推移">${g}</svg>`;
   }
-  function hardnessLabel(score){ if(score<=2) return {label:'低負荷',cls:'green'}; if(score<=5) return {label:'注意',cls:'amber'}; return {label:'やりすぎ',cls:'gray'}; }
 
   // ===================== ホーム =====================
   function renderHome() {
-    const t = totals();
-    const st = statusOf(t.safeLanding, t.buffer);
-    const pct = Math.min(100, t.cur / t.target * 100);
-    const safePct = Math.min(100, Math.max(0, t.safe / t.target * 100));
-    $('#homePeriod').textContent = `残り${t.p.remainingMonths}か月`;
+    const f = forecast();
+    const pct = Math.min(100, f.cur / f.target * 100);
+    $('#homeLead').textContent = f.beforeStart ? `${f.start.getMonth() + 1}/${f.start.getDate()}開始` : `残り${Math.round(f.remainMonths)}か月`;
+    const rem = reminder();
 
-    const adopted = state.candidates.filter(c=>c.decision==='採用');
-    const adoptedSum = adopted.reduce((a,c)=>a+(c.annual_amount||0),0);
-    const hard = hardnessTotal(); const hl = hardnessLabel(hard);
-
-    // 焦らせないメッセージ
-    let msgCls='calm', msg='';
-    if (st.key==='safe' || st.key==='almost') {
-      msgCls='good';
-      msg = `安全側の着地見込みは ${man(t.safeLanding)}円。\nこのペースなら、無理な寄せ替えをしなくても300万円に届く見込みです。`;
-    } else if (st.key==='adjust') {
-      msg = `自然体ではあと少し届きません。\n残り${man(t.remain)}円を、固定費や必要な大型支出の寄せ替えで埋められるなら達成を狙えます。\n不要な支出を増やす必要はありません。`;
-    } else if (st.key==='hard') {
-      msg = `現状ペースだと未達寄りです。\n残り${man(t.remain)}円を自然支出の寄せ替えで埋められるか確認しましょう。\n埋まらないなら、${state.settings.allow_lite?'今年はSFC LITE許容でもよい設計です。':'目標額や許容方針を見直すのも手です。'}`;
+    // 試算カード
+    let fcValue, fcDesc;
+    if (f.status.key === 'done') {
+      fcValue = '達成済み';
+      fcDesc = `${mdLabel(f.latest.date)}時点で ${man(f.cur)}円。おつかれさまでした。`;
+    } else if (!f.reachDate) {
+      fcValue = '—';
+      fcDesc = 'ペースが出せません。設定の想定月平均を入れてください。';
     } else {
-      msgCls='calm';
-      msg = `今年は300万円に届かない見込みです。\nただしSFC資格そのものが無くなるわけではありません。\nラウンジやスターアライアンス・ゴールドの価値を、旅行頻度と照らして判断すれば十分です。`;
+      fcValue = `${ymLabel(f.reachDate)}ごろ`;
+      const inTime = f.reachDate <= f.end;
+      fcDesc = `このペース（月${man(f.pace)}円${f.paceSrc === 'assumed' ? '・想定値' : ''}）なら、あと約${Math.ceil(f.monthsToReach)}か月で300万円に届く見込みです。` +
+        (inTime ? `\n判定期間の終わり（${mdLabel(state.settings.period_end)}）まで余裕があります。`
+                : `\n判定期間の終わり（${mdLabel(state.settings.period_end)}）には約${man(f.target - f.landing)}円足りない見込みです。`);
+    }
+
+    // 必要ペースとの比較メッセージ
+    let msgCls = 'calm', msg = '';
+    if (f.status.key === 'done') { msgCls = 'good'; msg = '目標に届きました。ここから先は無理に寄せる必要はありません。'; }
+    else if (f.remainMonths <= 0) { msg = '判定期間が終わっています。設定で次の期間に切り替えられます。'; }
+    else {
+      const gap = f.pace - f.needMonthly;
+      if (gap >= 0) { msgCls = 'good'; msg = `期間内に届くには月${man(f.needMonthly)}円ペースが必要。\n今のペースはそれを月${man(gap)}円上回っています。`; }
+      else { msgCls = 'warn'; msg = `期間内に届くには月${man(f.needMonthly)}円ペースが必要。\n今のペースより月${man(-gap)}円多く使う計算です。必要な支出の寄せ替えで埋まるかを目安に。`; }
     }
 
     $('#homeScroll').innerHTML = `
+      ${rem ? `<div class="msg calm tap" id="remTap"><span style="flex:1;">${esc(rem)}</span><span class="chev">›</span></div>` : ''}
       <div class="hero">
-        <div class="lbl">現在の対象決済額</div>
-        <div class="big">${man(t.cur)}<span style="font-size:20px;">円</span></div>
-        <div class="sub">目標 ${man(t.target)}円 ／ 残り ${man(t.remain)}円</div>
-        <div class="gauge">
-          <div class="gauge-safe" style="width:${safePct}%"></div>
-          <i style="width:${pct}%"></i>
+        <div class="lbl">${f.latest ? `${mdLabel(f.latest.date)} 時点の累計利用額` : 'まだ記録がありません'}</div>
+        <div class="big">${man(f.cur)}<small>円</small></div>
+        <div class="sub">あと <b>${man(f.remain)}円</b> で${man(f.target)}円</div>
+        <div class="gauge"><i style="width:${pct}%"></i></div>
+        <div class="hero-row"><span>達成率 ${Math.floor(pct)}%</span><span>${f.lastDiff != null ? `前回比 ${signMan(f.lastDiff)}円` : ''}</span></div>
+      </div>
+
+      <div class="forecast">
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+          <div class="k">300万円に届くのは</div><span class="pill ${f.status.cls}">${f.status.label}</span>
         </div>
-        <div class="hero-row"><span>進捗 ${Math.round(pct)}%</span><span>安全側 ${man(t.safe)}円</span></div>
+        <div class="v">${fcValue}</div>
+        <div class="d" style="white-space:pre-wrap;">${fcDesc}</div>
       </div>
 
-      <div style="display:flex; gap:8px; margin-bottom:14px; align-items:center;">
-        <span class="pill ${st.cls}">${st.label}</span>
-        <span class="pill ${hl.cls}">無理度 ${hard}・${hl.label}</span>
+      <div class="grid2">
+        <div class="stat"><div class="k">実績ペース（月平均）</div><div class="v">${f.paceSrc === 'actual' ? man(f.pace) : '—'}<small>${f.paceSrc === 'actual' ? '円' : ''}</small></div></div>
+        <div class="stat"><div class="k">必要ペース（残り${Math.round(f.remainMonths)}か月）</div><div class="v">${man(f.needMonthly)}<small>円</small></div></div>
+        <div class="stat"><div class="k">期間末の着地見込み</div><div class="v">${man(f.landing)}<small>円</small></div></div>
+        <div class="stat"><div class="k">期間末までの過不足</div><div class="v" style="color:${f.landing >= f.target ? 'var(--green)' : '#B26A00'}">${signMan(f.landing - f.target)}<small>円</small></div></div>
       </div>
 
-      <div class="grid2" style="margin-bottom:6px;">
-        <div class="stat"><div class="k">必要月平均（残り${t.p.remainingMonths}か月）</div><div class="v">${man(t.needMonthly)}<small>円</small></div></div>
-        <div class="stat"><div class="k">着地見込み</div><div class="v">${man(t.landing)}<small>円</small></div></div>
-        <div class="stat"><div class="k">安全側 着地見込み</div><div class="v">${man(t.safeLanding)}<small>円</small></div></div>
-        <div class="stat"><div class="k">対象外リスク差</div><div class="v">${signMan(t.safe - t.cur)}<small>円</small></div></div>
-      </div>
-      <div style="font-size:11px; color:var(--tertiary); margin:0 2px 14px; line-height:1.6;">着地見込み＝実績 ＋ これからの自然ペース（設定の月平均・年間上乗せを反映。期間が進むほど実測ペース寄り）</div>
+      <div class="msg ${msgCls}">${msg}</div>
 
-      <div class="msg ${msgCls}" style="margin-bottom:14px;">${msg}</div>
-
-      <div class="sec-label">寄せ候補（採用ぶん）</div>
-      <div class="card tap" id="goCandFromHome" style="display:flex; align-items:center; justify-content:space-between;">
-        <div><div style="font-size:14px; font-weight:600;">採用した寄せで年間 ${man(adoptedSum)}円</div>
-        <div style="font-size:12px; color:var(--secondary); margin-top:2px;">${adopted.length}件採用 ／ 無理度 ${hard}（${hl.label}）</div></div>
-        <span class="chev">›</span>
+      <div class="sec-label">推移</div>
+      <div class="chart">${chartSVG(f)}
+        <div class="legend"><span><i style="border-color:#0B308E"></i>実績</span><span><i style="border-color:#00AFF0; border-top-style:dashed"></i>見込み</span><span><i style="border-color:#F59E0B; border-top-style:dashed"></i>目標</span></div>
       </div>
 
-      <div class="sec-label">判定期間</div>
-      <div class="card" style="font-size:13.5px; color:var(--secondary); line-height:1.7;">
-        ${state.settings.period_start} 〜 ${state.settings.period_end}<br>
-        経過 ${t.p.elapsedMonths}か月 ／ 残り ${t.p.remainingMonths}か月
+      ${!f.latest ? `<button class="btn primary" id="firstAdd">最初の記録を入れる</button>` : ''}
+      <div style="font-size:11px; color:var(--tertiary); line-height:1.6; margin:0 2px;">
+        判定期間 ${mdLabel(state.settings.period_start)}〜${mdLabel(state.settings.period_end)}。ペースは期間開始からの平均${f.paceSrc === 'assumed' ? '（記録が1か月分たまるまでは設定の想定値）' : ''}。金額はANAの利用実績照会の累計をそのまま入れる前提の見込みです。
       </div>
     `;
-    $('#goCandFromHome').onclick = ()=> switchView('cand');
+    const ra = $('#remTap'); if (ra) ra.onclick = () => openSnapSheet(null);
+    const fa = $('#firstAdd'); if (fa) fa.onclick = () => openSnapSheet(null);
   }
 
-  // ===================== 月次 =====================
-  function renderMonths() {
-    const list = periodMonths();
-    let sumT=0, sumS=0;
-    const rows = list.map(m=>{
-      const r = monthRec(m);
-      const tt = monthTarget(r), ss = monthSafe(r);
-      sumT+=tt; sumS+=ss;
-      const has = tt!==0 || ss!==0 || (r.note||'').length;
-      return `<div class="row tap" data-m="${m}">
-        <div class="main"><div class="ttl">${ym(m)}</div>
-        <div class="meta">${has ? `カード${man(r.ana_card)} ・ Pay${man(r.ana_pay)}${r.uncertain?` ・ リスク${man(r.uncertain)}`:''}${r.note?` ・ ${r.note}`:''}` : '未入力'}</div></div>
-        <div class="amt">${man(tt)}円<small>安全 ${man(ss)}円</small></div>
+  // ===================== 記録 =====================
+  function renderLog() {
+    if (!state.snaps.length) {
+      $('#logScroll').innerHTML = `<div class="empty">まだ記録がありません。<br>毎月末に、ANAの利用実績照会で見られる<br>「判定期間の累計利用額」を1つ入れるだけです。</div><button class="btn primary" id="logFirst">記録する</button>`;
+      $('#logFirst').onclick = () => openSnapSheet(null);
+      return;
+    }
+    const rows = [...state.snaps].reverse().map((s, i, arr) => {
+      const prev = arr[i + 1];
+      const diff = prev ? s.cumulative - prev.cumulative : null;
+      return `<div class="row" data-id="${s.id}">
+        <div class="main"><div class="ttl">${mdLabel(s.date)}</div><div class="meta">${s.note ? esc(s.note) : (diff != null ? `前回から${Math.round(monthsBetween(fromISO(prev.date), fromISO(s.date)) * 10) / 10}か月` : '最初の記録')}</div></div>
+        <div class="amt">${man(s.cumulative)}円${diff != null ? `<small style="${diff < 0 ? 'color:#B26A00' : ''}">${signMan(diff)}円</small>` : ''}</div>
         <span class="chev">›</span>
       </div>`;
     }).join('');
-    $('#monthsScroll').innerHTML = `
-      <div class="grid2" style="margin-bottom:12px;">
-        <div class="stat"><div class="k">対象決済 合計</div><div class="v">${man(sumT)}<small>円</small></div></div>
-        <div class="stat"><div class="k">安全側 合計</div><div class="v">${man(sumS)}<small>円</small></div></div>
-      </div>
-      <div class="sec-label">月をタップして入力</div>
-      <div class="list">${rows}</div>
-      <div class="msg calm">対象額 ＝ カード＋ANA Pay −返金/取消<br>安全側 ＝ 対象額 −対象外リスク</div>
-    `;
-    $$('#monthsScroll .row').forEach(el=> el.onclick = ()=> openMonthSheet(el.dataset.m));
+    $('#logScroll').innerHTML = `<div class="sec-label">月末時点の累計利用額</div><div class="list">${rows}</div>
+      <div style="font-size:11.5px; color:var(--tertiary); margin:0 2px; line-height:1.6;">緑の数字は前回からの増加分（その間に使った額）です。</div>`;
+    $$('#logScroll .row').forEach(el => el.onclick = () => openSnapSheet(el.dataset.id));
   }
 
-  function openMonthSheet(m) {
-    const r = monthRec(m);
-    openSheet(ym(m), `
-      ${manField('mc','ANAカード決済額', r.ana_card, {chips:true})}
-      ${manField('mp','ANA Pay決済額', r.ana_pay, {chips:true})}
-      ${manField('mr','返金・取消見込み', r.refund)}
-      ${manField('mu','対象外リスク額', r.uncertain, {hint:'対象になるか不確実な金額'})}
-      <div class="field"><label>メモ</label><textarea id="mn" placeholder="旅行・家電・税金など">${esc(r.note||'')}</textarea></div>
-    `, async ()=>{
-      const rec = { id:r.id, month:m,
-        ana_card:manv('mc'), ana_pay:manv('mp'), refund:manv('mr'), uncertain:manv('mu'),
-        note:$('#mn').value.trim(), updatedAt:now() };
-      await put('months', rec); await loadAll(); renderMonths(); renderHome(); toast('保存しました');
+  function openSnapSheet(id) {
+    const s = id ? state.snaps.find(x => x.id === id) : { id: uid(), date: defaultSnapDate(), cumulative: null, note: '' };
+    const before = state.snaps.filter(x => x.id !== s.id && x.date < s.date).pop();
+    openSheet(id ? '記録を編集' : '月末の記録', `
+      <div class="field"><label>記録日</label><input type="date" id="sd" value="${s.date}"></div>
+      <div class="field"><label>判定期間の累計利用額</label>
+        <div class="inwrap"><input type="number" class="big" inputmode="decimal" step="0.1" id="sc" value="${s.cumulative != null ? yenToMan(s.cumulative) : ''}" placeholder="0"><span class="unit">万円</span></div>
+        <div class="prev-note" id="scNote">${before ? `前回（${mdLabel(before.date)}）は ${man(before.cumulative)}円` : 'ANAの利用実績照会に出ている累計をそのまま入力'}</div>
+      </div>
+      <div class="field"><label>メモ（任意）</label><input type="text" id="sn" value="${esc(s.note || '')}" placeholder="旅行・家電・税金など"></div>
+      ${id ? `<button class="del-btn" id="snapDel">この記録を削除</button>` : ''}
+    `, async () => {
+      const raw = $('#sc').value.trim();
+      if (raw === '') { toast('累計利用額を入れてください'); return false; }
+      const date = $('#sd').value || defaultSnapDate();
+      // 同じ月の記録があれば上書き（月1件）
+      const sameMonth = state.snaps.find(x => x.id !== s.id && x.date.slice(0, 7) === date.slice(0, 7));
+      const rec = { id: sameMonth && !id ? sameMonth.id : s.id, date, cumulative: manToYen(raw), note: $('#sn').value.trim(), updatedAt: now() };
+      await put('snapshots', rec);
+      await loadAll(); renderAll(); toast(sameMonth && !id ? '同じ月の記録を更新しました' : '記録しました');
     });
-  }
-
-  // ===================== シナリオ =====================
-  function scenCalc(sc) {
-    const total = (sc.monthly_base||0)*12 + (sc.annual_boost||0);
-    const target = state.settings.target_amount, buffer = state.settings.risk_buffer;
-    const gap = total - target;
-    let f; if (total>=target+buffer) f={label:'安全圏',cls:'green'};
-    else if (total>=target) f={label:'達成',cls:'green'};
-    else if (total>=target*0.9) f={label:'未達寄り',cls:'amber'};
-    else f={label:'未達',cls:'gray'};
-    return { total, gap, f };
-  }
-  function renderScenarios() {
-    if (!state.scenarios.length) { $('#scenScroll').innerHTML = `<div class="empty">シナリオがありません。<br>右上の＋から「自然体」「少し寄せる」など、<br>月次ベース＋年間上乗せで作れます。</div>`; return; }
-    const cards = state.scenarios.map(sc=>{
-      const c = scenCalc(sc);
-      return `<div class="card tap" data-id="${sc.id}">
-        <div style="display:flex; justify-content:space-between; align-items:flex-start;">
-          <div style="font-size:16px; font-weight:700;">${esc(sc.name)}</div>
-          <span class="pill ${c.f.cls}">${c.f.label}</span>
-        </div>
-        <div style="font-size:13px; color:var(--secondary); margin:8px 0 4px;">月${man(sc.monthly_base)}円 × 12 ＋ 年間上乗せ ${man(sc.annual_boost)}円</div>
-        <div style="display:flex; justify-content:space-between; align-items:baseline; margin-top:6px;">
-          <div style="font-size:22px; font-weight:700;">${man(c.total)}円</div>
-          <div style="font-size:13px; font-weight:600; color:${c.gap>=0?'var(--green)':'var(--amber)'};">300万円差 ${signMan(c.gap)}円</div>
-        </div>
-      </div>`;
-    }).join('');
-    $('#scenScroll').innerHTML = `<div class="sec-label">「毎月固定」ではなく「月次ベース＋年間上乗せ」で見る</div>${cards}`;
-    $$('#scenScroll .card').forEach(el=> el.onclick = ()=> openScenSheet(el.dataset.id));
-  }
-  function openScenSheet(id) {
-    const sc = id ? state.scenarios.find(x=>x.id===id) : { id:uid(), name:'', monthly_base:200000, annual_boost:0, order:state.scenarios.length };
-    openSheet(id?'シナリオ編集':'シナリオ追加', `
-      <div class="field"><label>シナリオ名</label><input type="text" id="sn" value="${esc(sc.name)}" placeholder="自然体 / 少し寄せる など"></div>
-      ${manField('sb','月次ベース決済額', sc.monthly_base, {chips:true})}
-      ${manField('sa','年間上乗せ額', sc.annual_boost, {hint:'旅行・家電・税金など年1回の上振れ'})}
-    `, async ()=>{
-      const rec = { id:sc.id, name:$('#sn').value.trim()||'シナリオ', monthly_base:manv('sb'), annual_boost:manv('sa'), order:sc.order??state.scenarios.length, updatedAt:now() };
-      await put('scenarios', rec); await loadAll(); renderScenarios(); toast('保存しました');
-    }, id ? async ()=>{ await del('scenarios', id); await loadAll(); renderScenarios(); toast('削除しました'); } : null);
-  }
-
-  // ===================== 寄せ候補 =====================
-  const KLASSES = ['自然支出','寄せ替え','前倒し','危険'];
-  const DECISIONS = ['採用','保留','不採用'];
-  const KLASS_CLS = { '自然支出':'green','寄せ替え':'navy','前倒し':'amber','危険':'gray' };
-  function renderCand() {
-    if (!state.candidates.length) { $('#candScroll').innerHTML = `<div class="empty">寄せ候補がありません。<br>右上の＋から、通信費・旅行・家電など<br>ANAに寄せられそうな支出を登録できます。</div>`; return; }
-    const adoptedSum = state.candidates.filter(c=>c.decision==='採用').reduce((a,c)=>a+(c.annual_amount||0),0);
-    const cards = state.candidates.map(c=>{
-      const score = CLASS_SCORE[c.klass]??0;
-      const dCls = c.decision==='採用'?'green':c.decision==='不採用'?'gray':'amber';
-      return `<div class="row tap" data-id="${c.id}">
-        <div class="main">
-          <div class="ttl">${esc(c.name)}</div>
-          <div class="meta" style="display:flex; gap:6px; margin-top:5px; flex-wrap:wrap;">
-            <span class="mini-score" style="background:#E7EBF3;color:var(--navy)">${c.klass}</span>
-            <span class="mini-score" style="background:${dCls==='green'?'var(--green-soft)':dCls==='amber'?'var(--amber-soft)':'#ECECEF'};color:${dCls==='green'?'var(--green)':dCls==='amber'?'#B26A00':'var(--secondary)'}">${c.decision}</span>
-            ${c.note?`<span style="color:var(--secondary)">${esc(c.note)}</span>`:''}
-          </div>
-        </div>
-        <div class="amt">${man(c.annual_amount)}円<small>${score>0?`無理+${score}`:'負荷0'}</small></div>
-        <span class="chev">›</span>
-      </div>`;
-    }).join('');
-    $('#candScroll').innerHTML = `
-      <div class="stat" style="margin-bottom:12px;"><div class="k">採用ぶんの年間寄せ額</div><div class="v">${man(adoptedSum)}<small>円</small></div></div>
-      <div class="sec-label">支出を「自然支出 / 寄せ替え / 前倒し / 危険」で分類</div>
-      <div class="list">${cards}</div>
-    `;
-    $$('#candScroll .row').forEach(el=> el.onclick = ()=> openCandSheet(el.dataset.id));
-  }
-  function openCandSheet(id) {
-    const c = id ? state.candidates.find(x=>x.id===id) : { id:uid(), name:'', annual_amount:0, klass:'寄せ替え', decision:'保留', note:'', order:state.candidates.length };
-    openSheet(id?'寄せ候補 編集':'寄せ候補 追加', `
-      <div class="field"><label>支出名</label><input type="text" id="cn" value="${esc(c.name)}" placeholder="通信費 / 旅行 / 家電 など"></div>
-      ${manField('ca','年間見込み額', c.annual_amount, {chips:true})}
-      <div class="field"><label>分類</label>${seg('ck', KLASSES, c.klass)}
-        <div class="hint">自然支出・寄せ替え＝無理度0／前倒し＝+1／危険（不要支出・管理困難・対象外リスク大）＝+3</div></div>
-      <div class="field"><label>判断</label>${seg('cd', DECISIONS, c.decision)}</div>
-      <div class="field"><label>メモ（現在の決済先・JAL LSP等との競合・還元率など）</label><textarea id="cnote" placeholder="例）今はJAL Payに回している。還元は下がる。">${esc(c.note||'')}</textarea></div>
-    `, async ()=>{
-      const rec = { id:c.id, name:$('#cn').value.trim()||'支出', annual_amount:manv('ca'),
-        klass:segv('ck'), decision:segv('cd'), note:$('#cnote').value.trim(), order:c.order??state.candidates.length, updatedAt:now() };
-      await put('candidates', rec); await loadAll(); renderCand(); renderHome(); toast('保存しました');
-    }, id ? async ()=>{ await del('candidates', id); await loadAll(); renderCand(); renderHome(); toast('削除しました'); } : null);
+    const inp = $('#sc');
+    if (before) inp.oninput = () => {
+      const d = manToYen(inp.value) - before.cumulative;
+      $('#scNote').innerHTML = `前回（${mdLabel(before.date)}）は ${man(before.cumulative)}円 → 今回 <b>${signMan(d)}円</b>`;
+    };
+    const db = $('#snapDel');
+    if (db) db.onclick = async () => { if (!confirm('この記録を削除しますか？')) return; closeSheet(); await del('snapshots', id); await loadAll(); renderAll(); toast('削除しました'); };
+    if (!id) setTimeout(() => inp.focus(), 350);
   }
 
   // ===================== 設定 =====================
@@ -566,19 +457,11 @@
         <div class="field"><label>開始日</label><input type="date" id="ps" value="${s.period_start}"></div>
         <div class="field" style="margin-bottom:0;"><label>終了日</label><input type="date" id="pe" value="${s.period_end}"></div>
       </div>
-      <div class="sec-label">目標と安全バッファ</div>
+      <div class="sec-label">目標と想定ペース</div>
       <div class="card">
-        ${manField('ta','目標額', s.target_amount)}
-        ${manField('rb','安全バッファ', s.risk_buffer, {hint:'安全圏の判定に上乗せする余裕額'})}
-        <div class="field" style="margin-bottom:0; display:flex; align-items:center; justify-content:space-between;">
-          <div><label style="margin:0;">SFC LITEを許容する</label><div class="hint" style="margin-top:3px;">未達でも失敗扱いしない設計に</div></div>
-          <div class="toggle ${s.allow_lite?'on':''}" id="tgLite"><i></i></div>
-        </div>
-      </div>
-      <div class="sec-label">自然決済の前提（参考値）</div>
-      <div class="card">
-        ${manField('mn','自然決済の月平均', s.monthly_natural_spend)}
-        ${manField('ab','年間上乗せ期待額', s.annual_boost_expected)}
+        <div class="field"><label>目標額</label><div class="inwrap"><input type="number" inputmode="decimal" id="ta" value="${yenToMan(s.target_amount)}"><span class="unit">万円</span></div></div>
+        <div class="field" style="margin-bottom:0;"><label>想定月平均</label><div class="inwrap"><input type="number" inputmode="decimal" id="am" value="${yenToMan(s.assumed_monthly)}"><span class="unit">万円</span></div>
+          <div class="hint">記録が1か月分たまるまでの試算に使います。以降は実績ペースで計算。</div></div>
       </div>
       <div class="sec-label">データ</div>
       <div class="card" style="padding:12px;">
@@ -586,141 +469,92 @@
         <button class="btn ghost" id="btnImport">JSON取り込み</button>
         <input type="file" id="importFile" accept="application/json" style="display:none;">
       </div>
-      <div style="text-align:center; padding:14px; font-size:12px; color:var(--tertiary);">300万メーター v${APP_VERSION}</div>
-      <div class="msg calm" style="font-size:12px; margin-bottom:20px;">制度詳細はANA公式情報を優先してください。対象外決済があるため、アプリ上の金額は「見込み」として扱います。ANAカードからANA Payへのチャージは対象外です。</div>
+      <div class="msg calm" style="font-size:12px;">制度の詳細や対象外の決済はANA公式情報を優先してください。アプリの数字は入力した累計からの見込みです。</div>
+      <div style="text-align:center; padding:6px 0 20px; font-size:12px; color:var(--tertiary);">300万メーター v${APP_VERSION}</div>
     `;
-    const save = async (patch)=>{ state.settings = {...state.settings, ...patch, id:'main'}; await put('settings', state.settings); };
-    $('#ps').onchange = e=> save({period_start:e.target.value}).then(()=>{renderMonths();renderHome();});
-    $('#pe').onchange = e=> save({period_end:e.target.value}).then(()=>{renderMonths();renderHome();});
-    $('#ta').onchange = e=> save({target_amount:manToYen(e.target.value)}).then(()=>{renderHome();renderScenarios();});
-    $('#rb').onchange = e=> save({risk_buffer:manToYen(e.target.value)}).then(()=>{renderHome();renderScenarios();});
-    $('#mn').onchange = e=> save({monthly_natural_spend:manToYen(e.target.value)}).then(renderHome);
-    $('#ab').onchange = e=> save({annual_boost_expected:manToYen(e.target.value)}).then(renderHome);
-    $('#tgLite').onclick = function(){ const v=!state.settings.allow_lite; this.classList.toggle('on',v); save({allow_lite:v}).then(renderHome); };
+    const save = async (patch) => { state.settings = { ...state.settings, ...patch, id: 'main' }; await put('settings', state.settings); renderHome(); renderLog(); };
+    $('#ps').onchange = e => e.target.value && save({ period_start: e.target.value });
+    $('#pe').onchange = e => e.target.value && save({ period_end: e.target.value });
+    $('#ta').onchange = e => save({ target_amount: manToYen(e.target.value) || DEFAULTS.target_amount });
+    $('#am').onchange = e => save({ assumed_monthly: manToYen(e.target.value) });
     $('#btnExport').onclick = exportData;
-    $('#btnImport').onclick = ()=> $('#importFile').click();
-    $('#importFile').onchange = (e)=>{ if(e.target.files[0]) importData(e.target.files[0]); e.target.value=''; };
+    $('#btnImport').onclick = () => $('#importFile').click();
+    $('#importFile').onchange = (e) => { if (e.target.files[0]) importData(e.target.files[0]); e.target.value = ''; };
   }
 
-  // ===================== sheet / fields =====================
-  function esc(s){ return String(s??'').replace(/[&<>"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
-  function parseNum(v){ const n = Number(String(v).replace(/[^0-9.-]/g,'')); return isNaN(n)?0:n; }
-  function numv(id){ return parseNum($('#'+id).value); }
-  function segv(id){ const on = $('#'+id+' .on'); return on?on.dataset.val:''; }
-  function numFieldInner(id,label,val){ return `<label>${label}</label><div class="inwrap"><input type="number" inputmode="numeric" id="${id}" value="${val||0}"><span class="unit">円</span></div>`; }
-  function numField(id,label,val,hint){ return `<div class="field">${numFieldInner(id,label,val)}${hint?`<div class="hint">${hint}</div>`:''}</div>`; }
-  const manToYen = (v)=> Math.round(parseNum(v)*10000);
-  function manv(id){ return manToYen($('#'+id).value); }
-  function manField(id,label,valYen,opts){
-    opts = opts||{};
-    const vs = Math.round(((valYen||0)/10000)*1000)/1000;
-    const chips = opts.chips ? `<div class="chips" data-for="${id}">${[1,5,10,50].map(n=>`<button type="button" data-add="${n}">+${n}万</button>`).join('')}<button type="button" data-zero="1">0</button></div>` : '';
-    return `<div class="field"><label>${label}</label><div class="inwrap"><input type="number" inputmode="decimal" step="0.1" id="${id}" value="${vs||0}"><span class="unit">万円</span></div>${chips}${opts.hint?`<div class="hint">${opts.hint}</div>`:''}</div>`;
-  }
-  function seg(id, opts, cur){ return `<div class="seg" id="${id}">${opts.map(o=>`<button data-val="${o}" class="${o===cur?'on':''}">${o}</button>`).join('')}</div>`; }
-
-  let sheetSave=null, sheetDel=null;
-  function openSheet(title, bodyHTML, onSave, onDelete){
-    $('#sheetTitle').textContent = title;
-    $('#sheetBody').innerHTML = bodyHTML;
-    sheetSave = onSave; sheetDel = onDelete||null;
-    // segmented binding
-    $$('#sheetBody .seg').forEach(seg=> seg.querySelectorAll('button').forEach(b=> b.onclick = ()=>{ seg.querySelectorAll('button').forEach(x=>x.classList.remove('on')); b.classList.add('on'); }));
-    $$('#sheetBody .chips').forEach(row=>{
-      const inp = document.getElementById(row.dataset.for);
-      row.querySelectorAll('button').forEach(b=> b.onclick = ()=>{
-        if (b.dataset.zero) inp.value = 0;
-        else inp.value = Math.round((parseNum(inp.value) + Number(b.dataset.add))*1000)/1000;
-      });
-    });
-    // delete button in head
-    const head = $('.sheet-head'); const old = head.querySelector('.del'); if(old) old.remove();
-    if (onDelete){ const d=document.createElement('button'); d.className='del'; d.textContent='削除'; d.onclick=async()=>{ closeSheet(); await onDelete(); }; head.insertBefore(d, $('#sheetSave')); }
+  // ===================== sheet =====================
+  let sheetSave = null;
+  function openSheet(title, html, onSave) {
+    $('#sheetTitle').textContent = title; $('#sheetBody').innerHTML = html; sheetSave = onSave;
     $('#sheetBg').classList.add('show'); $('#sheet').classList.add('show');
   }
-  function closeSheet(){ $('#sheetBg').classList.remove('show'); $('#sheet').classList.remove('show'); }
+  function closeSheet() { $('#sheetBg').classList.remove('show'); $('#sheet').classList.remove('show'); document.activeElement && document.activeElement.blur(); }
   $('#sheetCancel').onclick = closeSheet;
   $('#sheetBg').onclick = closeSheet;
-  $('#sheetSave').onclick = async ()=>{ if(sheetSave){ await sheetSave(); } closeSheet(); };
-  $('#addScenario').onclick = ()=> openScenSheet(null);
-  $('#addCand').onclick = ()=> openCandSheet(null);
+  $('#sheetSave').onclick = async () => { if (sheetSave) { const r = await sheetSave(); if (r === false) return; } closeSheet(); };
+  $('#homeAdd').onclick = () => openSnapSheet(null);
+  $('#logAdd').onclick = () => openSnapSheet(null);
 
   // ===================== nav =====================
-  const RENDER = { home:renderHome, months:renderMonths, scenarios:renderScenarios, cand:renderCand, settings:renderSettings };
-  function switchView(v){
-    $$('.view').forEach(el=> el.classList.toggle('active', el.id==='view-'+v));
-    $$('.tab').forEach(b=> b.classList.toggle('active', b.dataset.v===v));
-    RENDER[v] && RENDER[v]();
-    const sc = $('#view-'+v+' .scroll'); if(sc) sc.scrollTop=0;
+  const RENDER = { home: renderHome, log: renderLog, settings: renderSettings };
+  function renderAll() { renderHome(); renderLog(); }
+  function switchView(v) {
+    $$('.view').forEach(el => el.classList.toggle('active', el.id === 'view-' + v));
+    $$('.tab').forEach(b => b.classList.toggle('active', b.dataset.v === v));
+    RENDER[v](); const sc = $('#view-' + v + ' .scroll'); if (sc) sc.scrollTop = 0;
   }
-  $$('.tab').forEach(b=> b.onclick = ()=> switchView(b.dataset.v));
+  $$('.tab').forEach(b => b.onclick = () => switchView(b.dataset.v));
 
-  // ===================== toast =====================
-  let toastT=null;
-  function toast(m){ const el=$('#toast'); el.textContent=m; el.classList.add('show'); clearTimeout(toastT); toastT=setTimeout(()=>el.classList.remove('show'),1600); }
+  let toastT = null;
+  function toast(m) { const el = $('#toast'); el.textContent = m; el.classList.add('show'); clearTimeout(toastT); toastT = setTimeout(() => el.classList.remove('show'), 1700); }
 
   // ===================== export / import =====================
-  const SCHEMA = 'ana300.v1';
-  async function exportData(){
-    const data = { schema:SCHEMA, exportedAt:new Date().toISOString(),
-      settings:state.settings, months:state.months, candidates:state.candidates, scenarios:state.scenarios };
-    const blob = new Blob([JSON.stringify(data,null,2)], {type:'application/json'});
-    const url = URL.createObjectURL(blob); const a=document.createElement('a');
-    a.href=url; a.download='ana300-sync.json'; document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url);
+  const SCHEMA = 'ana300.v2';
+  function exportData() {
+    const data = { schema: SCHEMA, exportedAt: new Date().toISOString(), settings: state.settings, snapshots: state.snaps };
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob); const a = document.createElement('a');
+    a.href = url; a.download = 'ana300-sync.json'; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
     toast('書き出しました');
   }
-  async function importData(file){
-    try{
+  async function importData(file) {
+    try {
       const data = JSON.parse(await file.text());
       if (data.schema !== SCHEMA) { toast('対応していないファイルです'); return; }
-      if (data.settings){ state.settings = {...DEFAULTS, ...data.settings, id:'main'}; await put('settings', state.settings); }
-      for (const arr of [['months',data.months],['candidates',data.candidates],['scenarios',data.scenarios]]) {
-        const store=arr[0]; const items=arr[1]||[];
-        const localById = new Map(state[store].map(x=>[x.id,x]));
-        for (const it of items){ const l=localById.get(it.id); if(!l || (it.updatedAt||0) > (l.updatedAt||0)) await put(store, it); }
-      }
-      await loadAll(); switchView('home'); toast('取り込みました（新しい方を採用）');
-    } catch(e){ toast('読み込みに失敗しました'); }
+      if (data.settings) { state.settings = { ...DEFAULTS, ...data.settings, id: 'main' }; await put('settings', state.settings); }
+      const local = new Map(state.snaps.map(x => [x.id, x]));
+      for (const it of (data.snapshots || [])) { const l = local.get(it.id); if (!l || (it.updatedAt || 0) > (l.updatedAt || 0)) await put('snapshots', it); }
+      await loadAll(); switchView('home'); toast('取り込みました');
+    } catch (e) { toast('読み込みに失敗しました'); }
   }
 
   // ===================== init =====================
-  (async function init(){
-    setupViewportTracking();
-    await openDB();
-    await loadAll();
-    switchView('home');
+  (async function init() {
+    const vv = window.visualViewport;
+    if (vv) { const apply = () => document.documentElement.style.setProperty('--app-height', vv.height + 'px'); vv.addEventListener('resize', apply); apply(); }
+    await openDB(); await loadAll(); switchView('home');
   })();
 
-  function setupViewportTracking(){
-    const vv = window.visualViewport; if(!vv) return;
-    const root = document.documentElement; let base = vv.height;
-    const apply = ()=>{ root.style.setProperty('--app-height', vv.height+'px'); };
-    vv.addEventListener('resize', apply); vv.addEventListener('scroll', apply);
-    window.addEventListener('orientationchange', ()=> setTimeout(()=>{ base=vv.height; apply(); },300));
-    apply();
-  }
-
   // ===================== SW auto-update =====================
-  if ('serviceWorker' in navigator){
-    window.addEventListener('load', async ()=>{
-      try{
-        const swUrl = new URL('sw.js', location.href).href;
-        const res = await fetch(swUrl, {method:'HEAD'}); if(!res.ok) return;
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', async () => {
+      try {
+        const res = await fetch(new URL('sw.js', location.href).href, { method: 'HEAD' }); if (!res.ok) return;
         const reg = await navigator.serviceWorker.register('sw.js');
         if (reg.waiting && navigator.serviceWorker.controller) showUpdateBanner(reg.waiting);
-        reg.addEventListener('updatefound', ()=>{ const sw=reg.installing; if(!sw) return; sw.addEventListener('statechange', ()=>{ if(sw.state==='installed' && navigator.serviceWorker.controller) showUpdateBanner(sw); }); });
+        reg.addEventListener('updatefound', () => { const sw = reg.installing; if (!sw) return; sw.addEventListener('statechange', () => { if (sw.state === 'installed' && navigator.serviceWorker.controller) showUpdateBanner(sw); }); });
         reg.update();
-        document.addEventListener('visibilitychange', ()=>{ if(document.visibilityState==='visible') reg.update(); });
-        let refreshing=false; navigator.serviceWorker.addEventListener('controllerchange', ()=>{ if(refreshing) return; refreshing=true; window.location.reload(); });
-      }catch(e){}
+        document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') { reg.update(); renderHome(); } });
+        let refreshing = false; navigator.serviceWorker.addEventListener('controllerchange', () => { if (refreshing) return; refreshing = true; location.reload(); });
+      } catch (e) {}
     });
   }
-  function showUpdateBanner(waitingSW){
+  function showUpdateBanner(w) {
     if (document.getElementById('updateBanner')) return;
-    const b=document.createElement('button'); b.id='updateBanner';
-    b.innerHTML='<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 2v6h-6"/><path d="M3 12a9 9 0 0 1 15-6.7L21 8"/><path d="M3 22v-6h6"/><path d="M21 12a9 9 0 0 1-15 6.7L3 16"/></svg><span>新しいバージョンがあります — タップで更新</span>';
-    b.addEventListener('click', ()=>{ b.disabled=true; b.querySelector('span').textContent='更新中…'; waitingSW.postMessage('SKIP_WAITING'); });
-    document.body.appendChild(b); requestAnimationFrame(()=> b.classList.add('show'));
+    const b = document.createElement('button'); b.id = 'updateBanner';
+    b.innerHTML = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 2v6h-6"/><path d="M3 12a9 9 0 0 1 15-6.7L21 8"/><path d="M3 22v-6h6"/><path d="M21 12a9 9 0 0 1-15 6.7L3 16"/></svg><span>新しいバージョンがあります — タップで更新</span>';
+    b.onclick = () => { b.disabled = true; b.querySelector('span').textContent = '更新中…'; w.postMessage('SKIP_WAITING'); };
+    document.body.appendChild(b); requestAnimationFrame(() => b.classList.add('show'));
   }
 </script>
 </body>
