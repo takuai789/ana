@@ -207,7 +207,7 @@
   const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
   const now = () => Date.now();
 
-  const APP_VERSION = '2.3.0';
+  const APP_VERSION = '2.4.0';
 
   // ---------- IndexedDB ----------
   const DB_NAME = 'ana300-db';
@@ -278,7 +278,16 @@
     // 期間が終わっていないシートを常に3枚（今年分・翌年分・翌々年分）
     const t = todayISO();
     let active = sheets.filter(s => s.period_end >= t);
-    while (active.length < 3) { const ns = nextSheetFrom(sheets[sheets.length - 1]); await put('sheets', ns); sheets.push(ns); if (ns.period_end >= t) active.push(ns); }
+    const fixed = await getAll('fixed');
+    for (const f of fixed) if (!f.sheetId) { f.sheetId = (active[0] || sheets[sheets.length - 1]).id; await put('fixed', f); }
+    while (active.length < 3) {
+      const prev = sheets[sheets.length - 1];
+      const ns = nextSheetFrom(prev); await put('sheets', ns); sheets.push(ns); if (ns.period_end >= t) active.push(ns);
+      // 「毎年」の印が付いた予定は、新しいシートにも自動で引き継ぐ
+      for (const f of fixed.filter(x => x.sheetId === prev.id && x.recurring)) {
+        const nf = { ...f, id: uid(), sheetId: ns.id, updatedAt: now() }; await put('fixed', nf); fixed.push(nf);
+      }
+    }
     state.sheets = sheets;
     state.activeList = active;
     state.archived = sheets.filter(s => s.period_end < t).reverse();
@@ -286,8 +295,6 @@
     // 旧データ（sheetIdなし）を該当シートへ移す
     const snaps = await getAll('snapshots');
     for (const s of snaps) if (!s.sheetId) { const sh = sheets.find(x => s.date >= x.period_start && s.date <= x.period_end) || active[0]; s.sheetId = sh.id; await put('snapshots', s); }
-    const fixed = await getAll('fixed');
-    for (const f of fixed) if (!f.sheetId) { f.sheetId = active[0].id; await put('fixed', f); }
     state.allSnaps = snaps; state.allFixed = fixed;
 
     const aid = active.some(s => s.id === state.prefs.active_sheet) ? state.prefs.active_sheet : active[0].id;
@@ -698,22 +705,48 @@
     const prevFixed = prevSheet ? state.allFixed.filter(x => x.sheetId === prevSheet.id) : [];
     const copyBtn = !state.fixed.length && prevFixed.length ? `<button class="btn ghost" id="copyPrev" style="margin-bottom:12px;">${sheetName(prevSheet)}の予定をコピー（${prevFixed.length}件・月${man(fixedMonthlyTotal(prevFixed))}円）</button>` : '';
     const rows = state.fixed.map(x => `
-      <div class="row" data-id="${x.id}"><div class="main"><div class="ttl">${esc(x.name)}</div>${x.note ? `<div class="meta">${esc(x.note)}</div>` : ''}</div>
+      <div class="row" data-id="${x.id}"><div class="main"><div class="ttl">${esc(x.name)}${x.recurring ? ' <span class="pill blue" style="font-size:10.5px; padding:2px 7px; vertical-align:2px;">毎年</span>' : ''}</div>${x.note ? `<div class="meta">${esc(x.note)}</div>` : ''}</div>
       <div class="amt">月${man(x.monthly)}円</div><span class="chev">›</span></div>`).join('');
     $('#planScroll').innerHTML = `${bar}${summary}
       <div class="sec-label">${sheetName(state.settings)}：毎月確実に払う分</div>
       ${state.fixed.length ? `<div class="list">${rows}</div>` : `<div class="empty" style="padding:20px 16px;">家賃・通信費・光熱費・保険・サブスクなど、<br>ANAカード／ANA Payで毎月必ず払う分を入れます。</div>`}
       ${copyBtn}
-      <button class="add-btn" id="planAdd2">＋ 予定を追加</button>`;
+      <button class="add-btn" id="planAdd2">＋ 予定を追加</button>
+      ${state.fixed.length && laterSheets().length ? `<button class="btn ghost" id="propAll">すべて翌年以降にも反映</button>
+        <div style="font-size:11.5px; color:var(--tertiary); margin:8px 2px 0; line-height:1.5;">${laterSheets().map(sheetName).join('・')}に反映します。1件ずつ反映したいときは、各予定を開いて「翌年以降にも反映」を押します。</div>` : ''}`;
     bindSheetBar($('#planScroll'), renderPlan);
     $$('#planScroll .row').forEach(el => el.onclick = () => openFixedSheet(el.dataset.id));
     $('#planAdd2').onclick = () => openFixedSheet(null);
+    const pa = $('#propAll');
+    if (pa) pa.onclick = async () => {
+      if (!confirm(`${sheetName(state.settings)}の予定${state.fixed.length}件を、${laterSheets().map(sheetName).join('・')}にも反映しますか？\n（反映済みの年は金額・名前を上書きします）`)) return;
+      const k = await propagateFixed(state.fixed);
+      await loadAll(); renderPlan(); renderHome(); toast(`翌年以降の${k}シートに反映しました`);
+    };
     const cp = $('#copyPrev');
     if (cp) cp.onclick = async () => {
-      let o = 0; for (const x of prevFixed) await put('fixed', { id: uid(), sheetId: state.settings.id, name: x.name, monthly: x.monthly, note: x.note || '', order: o++, updatedAt: now() });
+      let o = 0; for (const x of prevFixed) await put('fixed', { id: uid(), sheetId: state.settings.id, seriesId: x.seriesId || x.id, recurring: !!x.recurring, name: x.name, monthly: x.monthly, note: x.note || '', order: o++, updatedAt: now() });
       await loadAll(); renderPlan(); renderHome(); toast('コピーしました');
     };
   }
+  // 予定を翌年以降のシートへ反映（同じ系列があれば上書き、なければ追加）
+  function laterSheets() { const i = state.activeList.findIndex(s => s.id === state.settings.id); return i >= 0 ? state.activeList.slice(i + 1) : []; }
+  async function propagateFixed(items) {
+    const later = laterSheets(); if (!later.length) return 0;
+    let n = 0;
+    for (const x of items) {
+      const seriesId = x.seriesId || x.id;
+      if (!x.seriesId || !x.recurring) await put('fixed', { ...x, seriesId, recurring: true, updatedAt: now() });
+      for (const sh of later) {
+        const ex = state.allFixed.find(f => f.sheetId === sh.id && (f.seriesId === seriesId || f.id === seriesId));
+        const order = ex ? ex.order : (x.order ?? n);
+        await put('fixed', { id: ex ? ex.id : uid(), sheetId: sh.id, seriesId, recurring: true, name: x.name, monthly: x.monthly, note: x.note || '', order, updatedAt: now() });
+        n++;
+      }
+    }
+    return later.length;
+  }
+
   function openFixedSheet(id) {
     const x = id ? state.fixed.find(f => f.id === id) : { id: uid(), name: '', monthly: 0, note: '', order: state.fixed.length };
     openSheet(id ? '予定を編集' : '予定を追加', `
@@ -721,13 +754,24 @@
       <div class="field"><label>毎月の金額</label><div class="inwrap"><input type="number" class="big" inputmode="decimal" step="0.1" id="fm" value="${x.monthly ? yenToMan(x.monthly) : ''}" placeholder="0"><span class="unit">万円</span></div>
         <div class="hint">ANAカード／ANA Payで払い、対象になる分だけ。</div></div>
       <div class="field"><label>メモ（任意）</label><input type="text" id="fo" value="${esc(x.note || '')}" placeholder="引き落とし日・支払い方法など"></div>
-      ${id ? `<button class="del-btn" id="fixDel">この予定を削除</button>` : ''}
+      ${laterSheets().length ? `<button class="btn ghost" id="fixProp" style="margin-bottom:6px;">保存して翌年以降にも反映</button>
+        <div class="hint" style="font-size:11.5px; color:var(--tertiary); margin:0 2px 10px; line-height:1.5;">${laterSheets().map(sheetName).join('・')}に反映します。「毎年」の印が付き、年が進んで新しいシートができたときも自動で引き継ぎます。反映済みの年は金額・名前を上書きします。</div>` : ''}
+      ${id ? `<button class="del-btn" id="fixDel">この予定を削除（${sheetName(state.settings)}のみ）</button>` : ''}
     `, async () => {
       const name = $('#fn').value.trim(), monthly = manToYen($('#fm').value);
       if (!name || !monthly) { toast('支払い名と金額を入れてください'); return false; }
-      await put('fixed', { id: x.id, sheetId: state.settings.id, name, monthly, note: $('#fo').value.trim(), order: x.order ?? state.fixed.length, updatedAt: now() });
+      await put('fixed', { ...x, id: x.id, sheetId: state.settings.id, name, monthly, note: $('#fo').value.trim(), order: x.order ?? state.fixed.length, updatedAt: now() });
       await loadAll(); renderPlan(); renderHome(); toast('保存しました');
     });
+    const fp = $('#fixProp');
+    if (fp) fp.onclick = async () => {
+      const name = $('#fn').value.trim(), monthly = manToYen($('#fm').value);
+      if (!name || !monthly) { toast('支払い名と金額を入れてください'); return; }
+      const rec = { ...x, id: x.id, sheetId: state.settings.id, name, monthly, note: $('#fo').value.trim(), order: x.order ?? state.fixed.length, updatedAt: now() };
+      await put('fixed', rec); await loadAll();
+      const k = await propagateFixed([state.fixed.find(f => f.id === rec.id)]);
+      closeSheet(); await loadAll(); renderPlan(); renderHome(); toast(`翌年以降の${k}シートにも反映しました`);
+    };
     const fd = $('#fixDel');
     if (fd) fd.onclick = async () => { if (!confirm('この予定を削除しますか？')) return; closeSheet(); await del('fixed', id); await loadAll(); renderPlan(); renderHome(); toast('削除しました'); };
     if (!id) setTimeout(() => $('#fn').focus(), 350);
