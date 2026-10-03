@@ -1,7 +1,7 @@
 // 300万メーター Service Worker（自動アップデート対応）
 // HTML本体はネットワーク優先で最新を取得。アイコン等はキャッシュ優先。
 // リリース時は index.html の APP_VERSION と必ずセットで CACHE を上げること。
-const CACHE = 'ana300-v1-2-0';
+const CACHE = 'ana300-v2-0-0';
 const ASSETS = [
   './',
   './index.html',
