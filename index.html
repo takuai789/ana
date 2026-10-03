@@ -165,6 +165,10 @@
   .sheet-head .t { font-size: 17px; font-weight: 700; }
   .sheet-head button { background: none; border: 0; font-family: inherit; font-size: 15px; font-weight: 600; color: var(--navy); cursor: pointer; }
   .sheet-body { overflow-y: auto; padding: 4px 16px 20px; }
+  .tgl { width: 51px; height: 31px; border-radius: 99px; background: #E9E9EB; border: 0; position: relative; cursor: pointer; flex-shrink: 0; transition: background .2s; padding: 0; }
+  .tgl i { position: absolute; top: 2px; left: 2px; width: 27px; height: 27px; border-radius: 50%; background: #fff; box-shadow: 0 1px 4px rgba(0,0,0,.25); transition: left .2s; }
+  .tgl.on { background: var(--green); }
+  .tgl.on i { left: 22px; }
   select.sel { width: 100%; font-family: inherit; font-size: 16px; color: var(--ink); background: var(--card); border: 0; border-radius: 12px; padding: 13px 14px; outline: none; -webkit-appearance: none; appearance: none; min-height: 48px;
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5 6 6.5 11 1.5' fill='none' stroke='%23999' stroke-width='1.8' stroke-linecap='round'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 14px center; }
   .del-btn { width: 100%; border: 0; background: none; color: #B26A00; font-family: inherit; font-size: 14px; font-weight: 600; padding: 12px; cursor: pointer; }
@@ -233,9 +237,16 @@
   const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
   const now = () => Date.now();
 
-  const APP_VERSION = '2.8.0';
+  const APP_VERSION = '2.10.0';
   // 毎月見るANAの実績確認ページ（LSサービス ご利用実績確認）
   const ANA_LS_URL = 'https://www.ana.co.jp/ja/jp/amc/premium/overview/status-life/cycle/';
+  // 参考リンク集（設定タブに表示）
+  const ANA_LINKS = [
+    { title: 'ご利用実績照会', when: '毎月', desc: '300万円に向けたANAカード・ANA Payの決済額の累計を確認（要ログイン）', url: 'https://stmt.cam.ana.co.jp/psz/amcj/jsp/renew/mile/reference.jsp' },
+    { title: 'ANAスーパーフライヤーズカードのサービスについて', when: '年に数回', desc: 'SFC PLUS／LITEの仕組み・判定期間と、決済額・対象外の利用などのQ&A', url: 'https://www.ana.co.jp/ja/jp/promotion/sfc/update-2026-revised/' },
+    { title: '達成条件の決済額に関するよくあるお問い合わせ', when: '迷ったとき', desc: '対象にならない利用の詳しい一覧。予定に入れる支払いが対象か確かめる', url: 'https://www.ana.co.jp/other/faq_atena/meta_2024/0155.html' },
+    { title: 'LSサービス ご利用実績確認について', when: '反映待ちの確認', desc: 'サービスごとに、実績がいつ反映されるか（反映待ちを入れるときの参考）', url: ANA_LS_URL },
+  ];
   const EXT_ICON = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 4h6v6"/><path d="M20 4 11 13"/><path d="M19 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1h5"/></svg>';
   const lsLinkHTML = (compact) => `<a class="ls-link${compact ? ' compact' : ''}" href="${ANA_LS_URL}" target="_blank" rel="noopener noreferrer">
       <span class="ls-ic"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 15.5 21 8.5l-2-2-6.5 2.4L6 5 4.5 6l4.3 4.6-4 1.5L3 11l-1 .8 1.6 2.4z"/><path d="M3 20h18"/></svg></span>
@@ -707,7 +718,7 @@
     const fa = $('#firstAdd'); if (fa) fa.onclick = () => openSnapSheet(null);
     const gp = $('#goPlan'); if (gp) gp.onclick = () => switchView('plan');
     const bk = $('#bkNow'); if (bk) bk.onclick = () => exportData();
-    const bl = $('#bkLater'); if (bl) bl.onclick = async () => { state.prefs = { ...state.prefs, backup_snooze: now() + 7 * DAY }; await put('settings', state.prefs); renderHome(); toast('1週間後にまたお知らせします'); };
+    const bl = $('#bkLater'); if (bl) bl.onclick = async () => { state.prefs = { ...state.prefs, backup_snooze: now() + (state.prefs.weekly_backup ? 2 : 7) * DAY }; await put('settings', state.prefs); renderHome(); toast(state.prefs.weekly_backup ? '2日後にまたお知らせします' : '1週間後にまたお知らせします'); };
     const gt = $('#goTasks'); if (gt) gt.onclick = () => switchView('tasks');
   }
 
@@ -976,21 +987,109 @@
   }
 
   // ===================== バックアップ =====================
-  const BACKUP_EVERY = 30 * DAY;
+  // 週1回（設定でON）または30日ごと。Chrome/Edgeは選んだフォルダへ自動保存、Safariはお知らせ＋ダウンロード
+  const canPickFolder = () => typeof window.showDirectoryPicker === 'function';
+  const backupEvery = () => (state.prefs.weekly_backup ? 7 : 30) * DAY;
+  let backupDir = null;          // 保存先フォルダ（FileSystemDirectoryHandle）
+  const dirName = () => (backupDir && backupDir.name) || '選んだフォルダ';
+  let backupNeedsGrant = false;  // ブラウザ再起動などで許可が切れた
+  const KEEP_BACKUPS = 12;
+  async function loadBackupDir() {
+    try { const row = (await getAll('settings')).find(x => x.id === 'backupDir'); backupDir = row ? row.handle : null; } catch (e) { backupDir = null; }
+  }
   function backupDue() {
-    if (!state.allSnaps.length) return false;
-    const last = state.prefs.last_backup || 0;
+    if (!state.allSnaps.length && !state.allFixed.length) return false;
     if (now() < (state.prefs.backup_snooze || 0)) return false;
-    return now() - last >= BACKUP_EVERY;
+    return now() - (state.prefs.last_backup || 0) >= backupEvery();
   }
   const lastBackupText = () => state.prefs.last_backup ? `${Math.max(0, Math.floor((now() - state.prefs.last_backup) / DAY))}日前（${mdLabel(toISO(new Date(state.prefs.last_backup)))}）` : 'まだ一度もありません';
+  function backupJSON() {
+    return JSON.stringify({ schema: SCHEMA, exportedAt: new Date().toISOString(), prefs: state.prefs, sheets: state.sheets, snapshots: state.allSnaps, fixed: state.allFixed, tasks: state.allTasks, oneoffs: state.allOneoffs }, null, 2);
+  }
+  const backupName = () => `ana300-backup-${todayISO().replace(/-/g, '')}.json`;
+  async function markBackedUp(msg) {
+    state.prefs = { ...state.prefs, last_backup: now(), backup_snooze: 0 }; await put('settings', state.prefs);
+    backupNeedsGrant = false; if (msg) toast(msg); RENDER[currentView](); if (currentView !== 'home') renderHome();
+  }
+  async function dirPermission(ask) {
+    if (!backupDir) return 'none';
+    if (!backupDir.queryPermission) return 'granted';
+    let p = await backupDir.queryPermission({ mode: 'readwrite' });
+    if (p !== 'granted' && ask) p = await backupDir.requestPermission({ mode: 'readwrite' });
+    return p;
+  }
+  async function writeToFolder() {
+    const fh = await backupDir.getFileHandle(backupName(), { create: true });
+    const w = await fh.createWritable(); await w.write(backupJSON()); await w.close();
+    // 古いバックアップは最新12件だけ残す
+    const names = [];
+    for await (const [name, hd] of backupDir.entries()) if (hd.kind === 'file' && /^ana300-backup-\d{8}\.json$/.test(name)) names.push(name);
+    names.sort(); for (const n of names.slice(0, Math.max(0, names.length - KEEP_BACKUPS))) await backupDir.removeEntry(n);
+  }
+  // 開いたとき・画面に戻ったとき・1時間ごとに呼ぶ。条件がそろえば黙って保存
+  let autoRunning = false;
+  async function autoBackup() {
+    if (autoRunning || !state.prefs.weekly_backup || !backupDir || !backupDue()) return;
+    autoRunning = true;
+    try {
+      const p = await dirPermission(false);
+      if (p === 'granted') { await writeToFolder(); await markBackedUp('週1回の自動バックアップを保存しました'); }
+      else { backupNeedsGrant = true; RENDER[currentView](); }
+    } catch (e) { backupNeedsGrant = true; } finally { autoRunning = false; }
+  }
+  async function chooseBackupFolder() {
+    try {
+      const dir = await window.showDirectoryPicker({ id: 'ana300-backup', mode: 'readwrite', startIn: 'documents' });
+      backupDir = dir; await put('settings', { id: 'backupDir', handle: dir });
+      state.prefs = { ...state.prefs, weekly_backup: true }; await put('settings', state.prefs);
+      await writeToFolder(); await markBackedUp(`「${dir.name}」に保存しました。以後は週1回自動で保存します`);
+    } catch (e) { if (!(e && e.name === 'AbortError')) toast('フォルダに保存できませんでした'); }
+  }
+  // 手動の書き出し（ボタン）：フォルダがあればそこへ、iPhoneは共有シート、Macはダウンロード
+  async function exportData() {
+    try {
+      if (backupDir && (await dirPermission(true)) === 'granted') { await writeToFolder(); await markBackedUp(`「${dirName()}」に保存しました`); return; }
+    } catch (e) {}
+    const json = backupJSON(), name = backupName();
+    const touch = navigator.maxTouchPoints > 0;
+    if (touch) {
+      try {
+        const file = new File([json], name, { type: 'application/json' });
+        if (navigator.canShare && navigator.canShare({ files: [file] })) { await navigator.share({ files: [file], title: '300万メーター バックアップ' }); await markBackedUp('バックアップを書き出しました'); return; }
+      } catch (e) { if (e && e.name === 'AbortError') { toast('書き出しをやめました'); return; } }
+    }
+    const url = URL.createObjectURL(new Blob([json], { type: 'application/json' })); const a = document.createElement('a');
+    a.href = url; a.download = name; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(url), 1000);
+    await markBackedUp('ダウンロードフォルダに保存しました');
+  }
   function backupCardHTML() {
     if (!backupDue()) return '';
+    const auto = state.prefs.weekly_backup && backupDir;
+    const title = auto && backupNeedsGrant ? '自動バックアップの許可が必要です' : 'バックアップしておきましょう';
+    const body = auto && backupNeedsGrant
+      ? `ブラウザを開き直したため、フォルダ「${esc(dirName())}」への保存の許可が切れています。ボタンを押して許可すると保存します（Chromeで「毎回許可」を選ぶと次からは不要です）。`
+      : `前回：${lastBackupText()}。データはこのブラウザの中にだけあるので、書き出しておくと安心です。`;
     return `<div class="card" style="padding:14px 15px;">
-      <div style="display:flex; align-items:center; gap:8px; font-size:15px; font-weight:700; color:var(--navy);"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg>バックアップしておきましょう</div>
-      <div style="font-size:12.5px; color:var(--secondary); line-height:1.6; margin:4px 0 12px;">前回：${lastBackupText()}。データはこの端末の中にだけあるので、機種変更やデータ削除に備えて書き出しておくと安心です。</div>
-      <div style="display:flex; gap:8px;"><button class="btn ghost" id="bkLater" style="flex:1; padding:11px;">あとで</button><button class="btn primary" id="bkNow" style="flex:1.4; padding:11px; margin:0;">今すぐ書き出す</button></div>
+      <div style="display:flex; align-items:center; gap:8px; font-size:15px; font-weight:700; color:var(--navy);"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg>${title}</div>
+      <div style="font-size:12.5px; color:var(--secondary); line-height:1.6; margin:4px 0 12px;">${body}</div>
+      <div style="display:flex; gap:8px;"><button class="btn ghost" id="bkLater" style="flex:1; padding:11px;">あとで</button><button class="btn primary" id="bkNow" style="flex:1.4; padding:11px; margin:0;">${auto ? '許可して保存' : '今すぐ書き出す'}</button></div>
     </div>`;
+  }
+  function backupSettingsHTML() {
+    const on = !!state.prefs.weekly_backup;
+    return `<div class="sec-label">定期バックアップ</div>
+      <div class="card">
+        <div style="display:flex; align-items:center; justify-content:space-between; gap:12px;">
+          <div><div style="font-size:15px; font-weight:600;">週1回バックアップ</div><div style="font-size:12px; color:var(--secondary); margin-top:2px;">オフのときは30日ごとにお知らせ</div></div>
+          <button class="tgl ${on ? 'on' : ''}" id="wkToggle" aria-label="週1回バックアップ"><i></i></button>
+        </div>
+        ${on ? (canPickFolder() ? `
+          <div class="hr"></div>
+          <div style="font-size:13px; color:var(--secondary); line-height:1.6;">保存先：<b style="color:var(--ink);">${backupDir ? esc(dirName()) : '未設定'}</b>${backupDir ? '' : '<br>フォルダを選ぶと、アプリを開いたときに7日たっていれば自動で保存します（最新12件を残して古いものは削除）。'}</div>
+          <button class="btn ghost" id="pickDir" style="margin-top:10px;">${backupDir ? '保存先を変える' : '保存先フォルダを選ぶ'}</button>
+          ${backupDir ? `<div style="font-size:11.5px; color:var(--tertiary); margin-top:8px; line-height:1.5;">iCloud Driveの中のフォルダにしておくと、Macが壊れても残ります。ブラウザを開き直すと保存の許可を聞かれることがあります（「毎回許可」を選ぶと以後は自動）。</div>` : ''}`
+          : `<div class="hr"></div><div style="font-size:12.5px; color:var(--secondary); line-height:1.6;">このブラウザはフォルダへの自動保存に対応していないため、7日ごとにホームでお知らせし、ボタン1つでダウンロードフォルダに保存します。Mac の Chrome／Edge で開くと、選んだフォルダへ自動で保存できます。</div>`) : ''}
+      </div>`;
   }
 
   // ===================== アーカイブ概要 =====================
@@ -1038,9 +1137,19 @@
           <div class="hint">記録が1か月分たまるまでの試算に使います。以降は実績ペースで計算。</div></div>
       </div>
 
+      <div class="sec-label">ANAの参考リンク</div>
+      <div class="list">${ANA_LINKS.map(l => `
+        <a class="row" href="${l.url}" target="_blank" rel="noopener noreferrer" style="text-decoration:none; color:inherit; align-items:flex-start;">
+          <div class="main"><div class="ttl" style="font-size:14.5px; white-space:normal;">${l.title}</div>
+            <div class="meta" style="white-space:normal; line-height:1.5; margin-top:3px;">${l.desc}</div>
+            <span class="pill blue" style="font-size:10.5px; padding:2px 8px; margin-top:6px;">${l.when}</span></div>
+          <span style="color:var(--navy); display:flex; padding-top:2px;">${EXT_ICON}</span></a>`).join('')}</div>
+      <div style="font-size:11px; color:var(--tertiary); margin:-4px 2px 12px; line-height:1.5;">ANAの公式ページを開きます。制度や対象の利用は変わることがあるので、最新の内容はリンク先で確認してください。</div>
+
       <div class="sec-label">アーカイブ（期間が終わった年）</div>
       ${arch || `<div class="msg calm" style="font-size:12.5px;">判定期間が終わったシートは自動でここに移り、概要だけ見られます。そのときは新しい「翌々年分」が自動で追加されます。</div>`}
 
+      ${backupSettingsHTML()}
       <div class="sec-label">データ</div>
       <div class="card" style="padding:12px;">
         <div style="font-size:12.5px; color:var(--secondary); margin:2px 2px 10px;">前回のバックアップ：${lastBackupText()}</div>
@@ -1059,6 +1168,8 @@
     $('#ta').onchange = e => saveSheet({ target_amount: manToYen(e.target.value) || SHEET_DEFAULT.target_amount }).then(renderHome);
     $('#am').onchange = e => saveSheet({ assumed_monthly: manToYen(e.target.value) }).then(renderHome);
     $('#btnExport').onclick = exportData;
+    $('#wkToggle').onclick = async () => { state.prefs = { ...state.prefs, weekly_backup: !state.prefs.weekly_backup, backup_snooze: 0 }; await put('settings', state.prefs); renderSettings(); };
+    const pd = $('#pickDir'); if (pd) pd.onclick = chooseBackupFolder;
     $('#btnImport').onclick = () => $('#importFile').click();
     $('#importFile').onchange = (e) => { if (e.target.files[0]) importData(e.target.files[0]); e.target.value = ''; };
   }
@@ -1091,24 +1202,6 @@
 
   // ===================== export / import =====================
   const SCHEMA = 'ana300.v3';
-  // iPhoneでは共有シート（「ファイルに保存」）、それ以外はダウンロード。成功したら日付を記録
-  async function exportData() {
-    const data = { schema: SCHEMA, exportedAt: new Date().toISOString(), prefs: state.prefs, sheets: state.sheets, snapshots: state.allSnaps, fixed: state.allFixed, tasks: state.allTasks, oneoffs: state.allOneoffs };
-    const json = JSON.stringify(data, null, 2);
-    const name = `ana300-backup-${todayISO().replace(/-/g, '')}.json`;
-    let ok = false;
-    try {
-      const file = new File([json], name, { type: 'application/json' });
-      if (navigator.canShare && navigator.canShare({ files: [file] })) { await navigator.share({ files: [file], title: '300万メーター バックアップ' }); ok = true; }
-    } catch (e) { if (e && e.name === 'AbortError') { toast('書き出しをやめました'); return; } }
-    if (!ok) {
-      const url = URL.createObjectURL(new Blob([json], { type: 'application/json' })); const a = document.createElement('a');
-      a.href = url; a.download = name; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(url), 1000);
-      ok = true;
-    }
-    state.prefs = { ...state.prefs, last_backup: now(), backup_snooze: 0 }; await put('settings', state.prefs);
-    toast('バックアップを書き出しました'); RENDER[currentView](); if (currentView !== 'home') renderHome();
-  }
   async function mergeInto(storeName, items, local) {
     const m = new Map(local.map(x => [x.id, x]));
     for (const it of items || []) { const l = m.get(it.id); if (!l || (it.updatedAt || 0) > (l.updatedAt || 0)) await put(storeName, it); }
@@ -1133,8 +1226,10 @@
   (async function init() {
     const vv = window.visualViewport;
     if (vv) { const apply = () => document.documentElement.style.setProperty('--app-height', vv.height + 'px'); vv.addEventListener('resize', apply); apply(); }
-    await openDB(); await loadAll(); switchView('home');
+    await openDB(); await loadAll(); await loadBackupDir(); switchView('home');
+    autoBackup(); setInterval(autoBackup, 60 * 60 * 1000);
   })();
+  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') autoBackup(); });
 
   // ===================== SW auto-update =====================
   if ('serviceWorker' in navigator) {
