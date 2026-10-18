@@ -237,7 +237,7 @@
   const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
   const now = () => Date.now();
 
-  const APP_VERSION = '2.10.0';
+  const APP_VERSION = '2.11.0';
   // 毎月見るANAの実績確認ページ（LSサービス ご利用実績確認）
   const ANA_LS_URL = 'https://www.ana.co.jp/ja/jp/amc/premium/overview/status-life/cycle/';
   // 参考リンク集（設定タブに表示）
@@ -1006,7 +1006,7 @@
   function backupJSON() {
     return JSON.stringify({ schema: SCHEMA, exportedAt: new Date().toISOString(), prefs: state.prefs, sheets: state.sheets, snapshots: state.allSnaps, fixed: state.allFixed, tasks: state.allTasks, oneoffs: state.allOneoffs }, null, 2);
   }
-  const backupName = () => `ana300-backup-${todayISO().replace(/-/g, '')}.json`;
+  const backupName = () => `300万メーター_${todayISO()}.json`;
   async function markBackedUp(msg) {
     state.prefs = { ...state.prefs, last_backup: now(), backup_snooze: 0 }; await put('settings', state.prefs);
     backupNeedsGrant = false; if (msg) toast(msg); RENDER[currentView](); if (currentView !== 'home') renderHome();
@@ -1023,8 +1023,8 @@
     const w = await fh.createWritable(); await w.write(backupJSON()); await w.close();
     // 古いバックアップは最新12件だけ残す
     const names = [];
-    for await (const [name, hd] of backupDir.entries()) if (hd.kind === 'file' && /^ana300-backup-\d{8}\.json$/.test(name)) names.push(name);
-    names.sort(); for (const n of names.slice(0, Math.max(0, names.length - KEEP_BACKUPS))) await backupDir.removeEntry(n);
+    for await (const [name, hd] of backupDir.entries()) if (hd.kind === 'file' && (/^ana300-backup-\d{8}\.json$/.test(name) || /^300万メーター_\d{4}-\d{2}-\d{2}\.json$/.test(name))) names.push(name);
+    names.sort((p, q) => p.replace(/\D/g, '').localeCompare(q.replace(/\D/g, ''))); for (const n of names.slice(0, Math.max(0, names.length - KEEP_BACKUPS))) await backupDir.removeEntry(n);
   }
   // 開いたとき・画面に戻ったとき・1時間ごとに呼ぶ。条件がそろえば黙って保存
   let autoRunning = false;
