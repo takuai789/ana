@@ -190,6 +190,9 @@
   #updateBanner.show { transform: translateY(0); }
   .toast { position: fixed; left: 50%; bottom: calc(var(--safe-bottom) + 78px); transform: translateX(-50%) translateY(20px); background: rgba(20,20,22,.92); color: #fff; font-size: 13px; font-weight: 600; padding: 11px 18px; border-radius: 99px; opacity: 0; transition: all .25s; z-index: 1100; pointer-events: none; white-space: nowrap; }
   .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  /* キーボードが出ているときも、シートが画面の上にはみ出さないように（見えている高さに収めて中をスクロール） */
+  .sheet { max-height: calc(var(--app-height, 100vh) - var(--safe-top, env(safe-area-inset-top, 0px)) - 16px) !important; overflow-y: auto !important; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; }
 </style>
 </head>
 <body>
@@ -237,7 +240,7 @@
   const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
   const now = () => Date.now();
 
-  const APP_VERSION = '2.13.0';
+  const APP_VERSION = '2.14.0';
   // 毎月見るANAの実績確認ページ（LSサービス ご利用実績確認）
   const ANA_LS_URL = 'https://www.ana.co.jp/ja/jp/amc/premium/overview/status-life/cycle/';
   // 参考リンク集（設定タブに表示）
