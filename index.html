@@ -194,6 +194,7 @@
   /* キーボードが出ているときも、シートが画面の上にはみ出さないように（見えている高さに収めて中をスクロール） */
   .sheet { max-height: calc(var(--app-height, 100vh) - var(--safe-top, env(safe-area-inset-top, 0px)) - 16px) !important; overflow-y: auto !important; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; }
 </style>
+<script>/* iPhoneが容量不足のときに保存データを消さないよう、端末にお願いしておく */try{navigator.storage&&navigator.storage.persist&&navigator.storage.persisted().then(function(p){if(!p)navigator.storage.persist();});}catch(e){}</script>
 </head>
 <body>
 <div id="app">
@@ -240,7 +241,7 @@
   const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
   const now = () => Date.now();
 
-  const APP_VERSION = '2.14.0';
+  const APP_VERSION = '2.15.0';
   // 毎月見るANAの実績確認ページ（LSサービス ご利用実績確認）
   const ANA_LS_URL = 'https://www.ana.co.jp/ja/jp/amc/premium/overview/status-life/cycle/';
   // 参考リンク集（設定タブに表示）
@@ -793,7 +794,7 @@
     $$('#tasksScroll .row').forEach(el => el.onclick = () => openTaskSheet(el.dataset.id));
     const td = $('#toggleDone'); if (td) td.onclick = () => { showDone = !showDone; renderTasks(); };
     const cd = $('#clearDone'); if (cd) cd.onclick = async () => {
-      if (!confirm(`完了した${done.length}件を消しますか？`)) return;
+      if (!(await uiAsk(`完了した${done.length}件を消しますか？`, '消す'))) return;
       for (const t of done) await del('tasks', t.id);
       await loadAll(); renderTasks(); toast('消しました');
     };
@@ -876,7 +877,7 @@
     const inp = $('#sc');
     if (before) inp.oninput = () => { const d = manToYen(inp.value) - before.cumulative; $('#scNote').innerHTML = `前回（${mdLabel(before.date)}）は ${man(before.cumulative)}円 → 今回 <b>${signMan(d)}円</b>`; };
     const db = $('#snapDel');
-    if (db) db.onclick = async () => { if (!confirm('この記録を削除しますか？')) return; closeSheet(); await del('snapshots', id); await loadAll(); renderAll(); toast('削除しました'); };
+    if (db) db.onclick = async () => { if (!(await uiAsk('この記録を削除しますか？', '削除する'))) return; closeSheet(); await del('snapshots', id); await loadAll(); renderAll(); toast('削除しました'); };
     if (!id) setTimeout(() => inp.focus(), 350);
   }
 
@@ -925,7 +926,7 @@
     $('#planAdd2').onclick = () => openFixedSheet(null);
     const pa = $('#propAll');
     if (pa) pa.onclick = async () => {
-      if (!confirm(`${sheetName(state.settings)}の予定${state.fixed.length}件を、${laterSheets().map(sheetName).join('・')}にも反映しますか？\n（反映済みの年は金額・名前を上書きします）`)) return;
+      if (!(await uiAsk(`${sheetName(state.settings)}の予定${state.fixed.length}件を、${laterSheets().map(sheetName).join('・')}にも反映しますか？\n（反映済みの年は金額・名前を上書きします）`, '反映する'))) return;
       const k = await propagateFixed(state.fixed);
       await loadAll(); renderPlan(); renderHome(); toast(`翌年以降の${k}シートに反映しました`);
     };
@@ -980,7 +981,7 @@
       closeSheet(); await loadAll(); renderPlan(); renderHome(); toast(`翌年以降の${k}シートにも反映しました`);
     };
     const fd = $('#fixDel');
-    if (fd) fd.onclick = async () => { if (!confirm('この予定を削除しますか？')) return; closeSheet(); await del('fixed', id); await loadAll(); renderPlan(); renderHome(); toast('削除しました'); };
+    if (fd) fd.onclick = async () => { if (!(await uiAsk('この予定を削除しますか？', '削除する'))) return; closeSheet(); await del('fixed', id); await loadAll(); renderPlan(); renderHome(); toast('削除しました'); };
     if (!id) setTimeout(() => $('#fn').focus(), 350);
   }
 
@@ -1020,7 +1021,7 @@
     const op = $('#oneProp');
     if (op) op.onclick = async () => { const rec = readOne(); if (!rec) return; await put('oneoffs', rec); await loadAll(); const k = await propagateOneoff(rec); closeSheet(); await loadAll(); renderPlan(); renderHome(); toast(`翌年以降の${k}シートにも反映しました`); };
     const od = $('#oneDel');
-    if (od) od.onclick = async () => { if (!confirm('この予定を削除しますか？')) return; closeSheet(); await del('oneoffs', id); await loadAll(); renderPlan(); renderHome(); toast('削除しました'); };
+    if (od) od.onclick = async () => { if (!(await uiAsk('この予定を削除しますか？', '削除する'))) return; closeSheet(); await del('oneoffs', id); await loadAll(); renderPlan(); renderHome(); toast('削除しました'); };
   }
 
   // ===================== バックアップ =====================
@@ -1403,6 +1404,14 @@
     b.onclick = () => { b.disabled = true; b.querySelector('span').textContent = '更新中…'; w.postMessage('SKIP_WAITING'); };
     document.body.appendChild(b); requestAnimationFrame(() => b.classList.add('show'));
   }
+</script>
+<div id="ui-toast" style="position:fixed;left:50%;top:calc(env(safe-area-inset-top,0px) + 16px);transform:translateX(-50%);background:rgba(28,28,30,.94);color:#fff;padding:11px 18px;border-radius:12px;font-size:14px;z-index:9000;opacity:0;pointer-events:none;transition:opacity .25s;max-width:90vw;text-align:center;font-family:inherit"></div>
+<div id="ui-ask" style="position:fixed;inset:0;background:rgba(0,0,0,.4);display:none;align-items:center;justify-content:center;z-index:9001;padding:24px"><div style="background:#fff;color:#1c1c1e;border-radius:16px;padding:20px 18px 14px;max-width:330px;width:100%;font-family:inherit"><p id="ui-ask-msg" style="margin:0 0 16px;font-size:15px;line-height:1.7;white-space:pre-line;text-align:center"></p><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px"><button type="button" id="ui-ask-no" style="padding:11px;border-radius:10px;border:0;background:rgba(0,0,0,.07);color:inherit;font:inherit;font-size:15px;font-weight:700">やめる</button><button type="button" id="ui-ask-yes" style="padding:11px;border-radius:10px;border:0;background:#E5484D;color:#fff;font:inherit;font-size:15px;font-weight:700">OK</button></div></div></div>
+<script>
+  // 自前のお知らせ・確認（iPhoneのホーム画面アプリでは alert/confirm が出ないことがあるため）
+  let _uiT = 0;
+  function uiToast(msg){ const t=document.getElementById('ui-toast'); t.textContent=msg; t.style.opacity='1'; clearTimeout(_uiT); _uiT=setTimeout(()=>{t.style.opacity='0';}, 2400); }
+  function uiAsk(msg, yes){ return new Promise(res=>{ const bg=document.getElementById('ui-ask'); document.getElementById('ui-ask-msg').textContent=msg; const y=document.getElementById('ui-ask-yes'), n=document.getElementById('ui-ask-no'); y.textContent=yes||'OK'; bg.style.display='flex'; const done=v=>{ bg.style.display='none'; y.onclick=n.onclick=null; res(v); }; y.onclick=()=>done(true); n.onclick=()=>done(false); }); }
 </script>
 </body>
 </html>
